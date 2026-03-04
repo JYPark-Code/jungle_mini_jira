@@ -1,0 +1,4 @@
+flask
+pymongo
+jinja2
+werkzeug
