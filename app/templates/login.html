@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Stylish&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/login.css') }}"
+    /> -->
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="{{ url_for('static', filename='js/calendar/main.js') }}"></script> -->
+  </head>
+
+  <body class="bg-light">
+    <div
+      class="container vh-100 d-flex justify-content-center align-items-center"
+    >
+      <div class="card shadow-sm" style="width: 380px">
+        <div class="card-body p-4">
+          <h3 class="text-center mb-4">MiniJira Login</h3>
+
+          <!-- error -->
+          {% if error %}
+          <div class="alert alert-danger text-center">{{ error }}</div>
+          {% endif %}
+
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label">이메일</label>
+              <input
+                type="email"
+                name="email"
+                class="form-control"
+                placeholder="이메일 입력"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">패스워드</label>
+              <input
+                type="password"
+                name="password"
+                class="form-control"
+                placeholder="패스워드 입력"
+                required
+              />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">로그인</button>
+          </form>
+
+          <!-- 회원가입 이동 -->
+          <div class="text-center mt-3">
+            <span class="text-muted">계정이 없으신가요?</span>
+
+            <a href="{{ url_for('auth.signup') }}" class="text-decoration-none">
+              회원가입
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
