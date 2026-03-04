@@ -2,3 +2,4 @@ black
 pymongo
 flask
 Jinja2
+bson

@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ko">
+  {% include "nav/nav.html" %}
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,31 +23,90 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
-    <style></style>
+    <script src="{{ url_for('static', filename='js/calendar/main.js') }}"></script>
   </head>
   <body>
-    <div class=""></div>
-
     <div class="calendar container-fluid grid">
       <div class="d-flex justify-content-between align-items-center">
         <div class="d-flex justify-content-between">
-          <button onclick="prev">◁</button>
+          <button id="btnPrev">◁</button>
           <div id="monthText"></div>
-          <button onclick="after">▷</button>
+          <button id="btnNext">▷</button>
         </div>
         <div>
-          <button>All</button>
-          <button>TO DO</button>
+          <button id="all">All</button>
+          <button id="Todo" data-bs-toggle="modal" data-bs-target="#modal">
+            TO DO
+          </button>
           <button>In Progress</button>
           <button>Done</button>
         </div>
       </div>
 
-      <div id="calendar-grid" class="grid text-center">
+      <div id="calendar-weekday">
         {% for w in weeks %}
-        <div id="calendar-weekday">{{ w }}</div>
+        <div class="grid text-center">{{ w }}</div>
         {% endfor %}
+      </div>
+      <div id="calendar-days" class="grid text-center"></div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="modal"
+      tabindex="-1"
+      aria-labelledby="modalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5">Create Issue</h1>
+          </div>
+          <div class="modal-body">
+            <!-- Title -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Title</label>
+              <input
+                type="text"
+                class="form-control"
+                maxlength="15"
+                placeholder="Enter title (최대 15자리까지)"
+              />
+              <div class="form-text">최대 15자리</div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Description</label>
+              <textarea
+                class="form-control"
+                rows="4"
+                maxlength="200"
+                placeholder="Enter description (최대 200자리까지)"
+              ></textarea>
+              <div class="form-text">최대 200자리</div>
+            </div>
+
+            <!-- Due Date -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">Due Date</label>
+              <input type="date" class="form-control" id="dueDate" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+            <button type="button" onclick="save()" class="btn btn-primary">
+              Save
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -57,68 +117,37 @@
         const m = t.getMonth() + 1;
         const d = t.getDate();
         calendar(y, m, d);
+        btnPrev();
+        btnNext();
+        btnAll();
+        dateMin();
       });
 
-      function pad2(n) {
-        return String(n).padStart(2, "0");
-      }
+      // const tempData = {
+      //   project_id: "65e5c8d9b1a9e0c8c2c7f123",
+      //   title: "로그인 UI 구현",
+      //   description: "설명",
+      //   status: "TODO",
+      //   created_at: "string",
+      //   due_date: "2026-03-07",
+      //   created_by: "TEST닉네임",
+      // };
+      // const save = () => {
+      //   $.ajax({
+      //     url: "/api/todo", // Flask endpoint
+      //     type: "POST",
+      //     contentType: "application/json",
+      //     data: JSON.stringify(tempData),
 
-      function fmtYMD(d) {
-        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-      }
+      //     success: function (res) {
+      //       console.log("저장 성공", res);
+      //     },
 
-      const calendar = (y, m, d) => {
-        let monthText = $("#monthText");
-
-        let today = new Date(y, m - 1, d);
-        let year = today.getFullYear();
-        let month = today.getMonth() + 1;
-        let firstDay = new Date(year, month - 1, 1);
-        let startOffset = firstDay.getDay();
-        let daysInMonth = new Date(year, month, 0).getDate();
-
-        let totalCells = startOffset + daysInMonth;
-        let weekCount = Math.ceil(totalCells / 7);
-        let cellCount = weekCount * 7;
-
-        let gridStart = new Date(year, month - 1, 1 - startOffset);
-
-        // 상단 월 텍스트
-        monthText.text(`${year}-${pad2(month)}`);
-
-        let dayList = $("#calendar-grid");
-
-        // 달에 따라 요일 입력
-        for (let i = 0; i < cellCount; i++) {
-          let d = new Date(gridStart);
-          d.setDate(gridStart.getDate() + i);
-
-          let cell = $("<button>");
-          cell.addClass("calendar-day");
-
-          let ymd = fmtYMD(d);
-          cell.attr("data-date", ymd);
-
-          cell.append($("<div>").addClass("date-num").text(d.getDate()));
-          cell.append($("<div>").addClass("items"));
-
-          // 다른 달이면 다름
-          if (d.getMonth() !== month - 1) cell.addClass("other-month");
-
-          // 오늘이면 강조
-          if (fmtYMD(d) === fmtYMD(today)) cell.addClass("today");
-
-          cell.on("click", () => {
-            alert("clicked");
-          });
-
-          dayList.append(cell);
-        }
-      };
-
-      const prev = () => {};
-
-      const after = () => {};
+      //     error: function (err) {
+      //       console.error("저장 실패", err);
+      //     },
+      //   });
+      // };
     </script>
   </body>
 </html>
