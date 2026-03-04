@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Stylish&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/calendar/main.css') }}"
+    />
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style></style>
+  </head>
+  <body>
+    <div class=""></div>
+
+    <div class="calendar container-fluid grid">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between">
+          <button onclick="prev">◁</button>
+          <div id="monthText"></div>
+          <button onclick="after">▷</button>
+        </div>
+        <div>
+          <button>All</button>
+          <button>TO DO</button>
+          <button>In Progress</button>
+          <button>Done</button>
+        </div>
+      </div>
+
+      <div id="calendar-grid" class="grid text-center">
+        {% for w in weeks %}
+        <div id="calendar-weekday">{{ w }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <script>
+      $(document).ready(() => {
+        const t = new Date();
+        const y = t.getFullYear();
+        const m = t.getMonth() + 1;
+        const d = t.getDate();
+        calendar(y, m, d);
+      });
+
+      function pad2(n) {
+        return String(n).padStart(2, "0");
+      }
+
+      function fmtYMD(d) {
+        return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+      }
+
+      const calendar = (y, m, d) => {
+        let monthText = $("#monthText");
+
+        let today = new Date(y, m - 1, d);
+        let year = today.getFullYear();
+        let month = today.getMonth() + 1;
+        let firstDay = new Date(year, month - 1, 1);
+        let startOffset = firstDay.getDay();
+        let daysInMonth = new Date(year, month, 0).getDate();
+
+        let totalCells = startOffset + daysInMonth;
+        let weekCount = Math.ceil(totalCells / 7);
+        let cellCount = weekCount * 7;
+
+        let gridStart = new Date(year, month - 1, 1 - startOffset);
+
+        // 상단 월 텍스트
+        monthText.text(`${year}-${pad2(month)}`);
+
+        let dayList = $("#calendar-grid");
+
+        // 달에 따라 요일 입력
+        for (let i = 0; i < cellCount; i++) {
+          let d = new Date(gridStart);
+          d.setDate(gridStart.getDate() + i);
+
+          let cell = $("<button>");
+          cell.addClass("calendar-day");
+
+          let ymd = fmtYMD(d);
+          cell.attr("data-date", ymd);
+
+          cell.append($("<div>").addClass("date-num").text(d.getDate()));
+          cell.append($("<div>").addClass("items"));
+
+          // 다른 달이면 다름
+          if (d.getMonth() !== month - 1) cell.addClass("other-month");
+
+          // 오늘이면 강조
+          if (fmtYMD(d) === fmtYMD(today)) cell.addClass("today");
+
+          cell.on("click", () => {
+            alert("clicked");
+          });
+
+          dayList.append(cell);
+        }
+      };
+
+      const prev = () => {};
+
+      const after = () => {};
+    </script>
+  </body>
+</html>
