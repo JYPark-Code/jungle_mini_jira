@@ -1,0 +1,113 @@
+:root {
+    --color-text: #333333;
+    --color-Calendar: #24f02a;
+    --color-Status: #ff2525;
+    --color-border-subtle: #e9ecef;
+    --font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-weight-normal: 400;
+    --font-weight-bold: 700;
+    --navbar-height: 70px;
+    --navbar-padding: 1rem;
+}
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-family-sans-serif);
+    font-size: 1rem;
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+    color: var(--color-text);
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    text-decoration: none;
+    color: var(--color-text);
+}
+
+.navbar {
+    height: var(--navbar-height);
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.navbar__container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--navbar-padding);
+}
+
+.navbar__Home {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin-right: 50px;
+}
+
+
+    .navbar__menu {
+        display: flex;
+        align-items: center;
+    }
+    .navbar__list {
+        display: flex;
+        align-items: center;
+    }
+    .navbar__Calendar, .navbar__Status {
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+    }
+    .navbar__Calendar:hover { border-bottom-color: var(--color-Calendar); }
+    .navbar__Status:hover { border-bottom-color: var(--color-Status); }
+    
+    .navbar__issue {
+        border: none;
+        margin-left: 0.5rem; /* Space between links */
+    }
+    .navbar__issue--cta {
+        margin-left: 1.5rem;
+    }
+    
+    .navbar__profile {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid var(--color-border-subtle);
+        display: flex-end;
+        font-weight: var(--font-weight-bold);
+        cursor: pointer;
+    }
+
+
+/* 모달 커스텀 스타일 (Fade 및 배경 제거) */
+#profileModal.modal {
+    position: absolute;
+    display: none;
+    background: none; /* 회색 배경 제거 */
+    z-index: 1050;
+}
+
+#profileModal .modal-dialog {
+    margin: 0; /* 중앙 정렬 제거 */
+    max-width: 350px;
+}
+
+#profileModal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
