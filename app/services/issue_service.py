@@ -97,7 +97,7 @@ def update_issue_fields_service(db, issue_id, expected_version, payload, actor_i
     allowed_fields = {"title", "description", "start_date", "due_date", "status"}
     patch = {}
     for k, v in payload.items():
-        if k in allowed_fields:
+        if k in allowed_fields and v != "" and v is not None:
             patch[k] = v
 
     if not patch:
