@@ -1,7 +1,7 @@
 :root {
   --color-text: #333333;
-  --color-Calendar: #24f02a;
-  --color-Status: #ff2525;
+  --color-Calendar: #8d24f0;
+  --color-Status: #3d37e8;
   --color-border-subtle: #e9ecef;
   --font-weight-normal: 400;
   --font-weight-bold: 700;
@@ -74,6 +74,8 @@
   border-radius: 10px;
   border-bottom: 2px solid transparent;
   cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text);
 }
 
 .navbar__Calendar:hover {
