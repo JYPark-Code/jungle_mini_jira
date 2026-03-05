@@ -15,6 +15,7 @@ def _serialize_comment(comment):
     return {
         "id": comment.get("id"),
         "author_id": _convert_value(comment.get("author_id")),
+        "author_name": comment.get("author_name", "Unknown"),
         "content": comment.get("content"),
         "created_at": _convert_value(comment.get("created_at")),
         "deleted": comment.get("deleted", False),

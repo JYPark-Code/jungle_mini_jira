@@ -79,11 +79,12 @@ def delete_issue(db, issue_id):
     return result.deleted_count == 1
 
 
-def add_comment(db, issue_id, author_id, content):
+def add_comment(db, issue_id, author_id, content, author_name):
     comment_id = str(uuid.uuid4())
     comment = {
         "id": comment_id,
         "author_id": author_id,
+        "author_name": author_name,
         "content": content,
         "created_at": datetime.now(),
         "deleted": False,

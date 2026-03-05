@@ -10,6 +10,7 @@ from app.models.validators import validate_issue
 
 from app.repositories import issue_repository as repo
 from app.repositories import project_repository as project_repo
+from app.repositories import user_repository
 
 
 def _check_membership(db, project_id, user_id):
@@ -130,7 +131,10 @@ def add_comment_service(db, issue_id, actor_id, content):
     if not content.strip():
         raise ValueError("empty comment")
 
-    return repo.add_comment(db, issue_id, actor_id, content)
+    user = user_repository.find_by_id(db, actor_id)
+    author_name = user["username"] if user else "Unknown"
+
+    return repo.add_comment(db, issue_id, actor_id, content, author_name)
 
 
 def delete_comment_service(db, issue_id, comment_id, actor_id):
