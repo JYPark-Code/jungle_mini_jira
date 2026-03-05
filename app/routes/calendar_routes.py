@@ -57,10 +57,13 @@ def _remaining_text(due_value):
     if not due_value:
         return "마감일 없음"
 
-    if isinstance(due_value, datetime):
-        due = due_value
-    else:
-        due = datetime.fromisoformat(str(due_value))
+    try:
+        if isinstance(due_value, datetime):
+            due = due_value
+        else:
+            due = datetime.fromisoformat(str(due_value).strip())
+    except (ValueError, TypeError):
+        return "마감일 오류"
 
     now = datetime.now()
     delta = due - now
