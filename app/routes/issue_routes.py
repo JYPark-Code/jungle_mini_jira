@@ -1,11 +1,20 @@
-from __future__ import annotations
-
-from flask import Blueprint, request, jsonify, current_app, session, redirect, url_for
+# routes/issue_routes.py
+from flask import (
+    Blueprint,
+    request,
+    jsonify,
+    current_app,
+    session,
+    redirect,
+    url_for,
+    flash,
+)
 from app.services.issue_service import (
     create_issue_service,
     list_issues_by_project_service,
     list_issues_by_range_service,
     update_issue_status_service,
+    update_issue_fields_service,
     get_issue_service,
     delete_issue_service,
     add_comment_service,
@@ -26,7 +35,9 @@ def create_issue(project_id):
 
     try:
         created = create_issue_service(db=db, project_id=project_id, payload=payload, actor_id=user_id)
-        return jsonify(created), 201
+        return jsonify({"message": "이슈 생성 성공", "issue": created}), 201
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
     except ValueError as e:
         return jsonify({"message": str(e)}), 400
 
@@ -37,7 +48,15 @@ def list_issues_by_project(project_id):
         return jsonify({"message": "login required"}), 401
 
     db = current_app.mongo
-    issues = list_issues_by_project_service(db=db, project_id=project_id)
+    user_id = session["user_id"]
+
+    try:
+        issues = list_issues_by_project_service(db=db, project_id=project_id, actor_id=user_id)
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
     return jsonify(issues), 200
 
 
@@ -52,7 +71,15 @@ def list_issues_by_range(project_id):
         return jsonify({"message": "start and end query params are required"}), 400
 
     db = current_app.mongo
-    issues = list_issues_by_range_service(db=db, project_id=project_id, start_date=start, end_date=end)
+    user_id = session["user_id"]
+
+    try:
+        issues = list_issues_by_range_service(db=db, project_id=project_id, start_date=start, end_date=end, actor_id=user_id)
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
     return jsonify(issues), 200
 
 
@@ -88,6 +115,38 @@ def update_issue_status(issue_id):
     updated = get_issue_service(db=db, issue_id=issue_id)
     return jsonify(updated), 200
 
+@issue_bp.route("/api/issues/<issue_id>/fields", methods=["PATCH"])
+def update_issue_fields(issue_id):
+    if "user_id" not in session:
+        return jsonify({"message": "login required"}), 401
+
+    payload = request.get_json(silent=True) or {}
+    if "expected_version" not in payload:
+        return jsonify({"message": "expected_version is required"}), 400
+
+    db = current_app.mongo
+    user_id = session["user_id"]
+
+    try:
+        ok = update_issue_fields_service(
+            db=db,
+            issue_id=issue_id,
+            expected_version=int(payload["expected_version"]),
+            payload=payload,
+            actor_id=user_id,
+        )
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+
+    if not ok:
+        current = get_issue_service(db=db, issue_id=issue_id)
+        return jsonify({"message": "version conflict", "current": current}), 409
+
+    updated = get_issue_service(db=db, issue_id=issue_id)
+    return jsonify(updated), 200
+
 
 @issue_bp.route("/issues/<issue_id>/delete", methods=["POST"])
 def delete_issue(issue_id):
@@ -99,8 +158,9 @@ def delete_issue(issue_id):
 
     try:
         delete_issue_service(db, issue_id, user_id)
+        flash("이슈가 삭제되었습니다.", "success")
     except PermissionError:
-        return "삭제 권한이 없습니다.", 403
+        flash("삭제 권한이 없습니다.", "error")
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -116,8 +176,9 @@ def add_comment(issue_id):
 
     try:
         add_comment_service(db=db, issue_id=issue_id, actor_id=user_id, content=content)
-    except ValueError:
-        pass
+        flash("댓글이 등록되었습니다.", "success")
+    except ValueError as e:
+        flash(str(e), "error")
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -132,7 +193,8 @@ def delete_comment(issue_id, comment_id):
 
     try:
         delete_comment_service(db=db, issue_id=issue_id, comment_id=comment_id, actor_id=user_id)
+        flash("댓글이 삭제되었습니다.", "success")
     except PermissionError:
-        return "삭제 권한이 없습니다.", 403
+        flash("삭제 권한이 없습니다.", "error")
 
     return redirect(url_for("calendar.calendar_view"))

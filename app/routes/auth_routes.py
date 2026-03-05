@@ -64,7 +64,7 @@ def signup():
     session["user_id"] = str(user["_id"])
     return redirect(url_for("calendar.calendar_view"))
 
-@auth_bp.route("/logout", methods=["GET"])
+@auth_bp.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     return redirect(url_for("auth.login"))

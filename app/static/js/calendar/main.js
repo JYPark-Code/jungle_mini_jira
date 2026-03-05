@@ -6,7 +6,7 @@ function fmtYMD(d) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-const calendar = (y, m, d) => {
+const calendar = (y, m, d, projectId) => {
   curYear = y;
   curMonth = m;
   let monthText = $("#monthText");
@@ -33,7 +33,7 @@ const calendar = (y, m, d) => {
     let d = new Date(gridStart);
     d.setDate(gridStart.getDate() + i);
 
-    let cell = $("<button>");
+    let cell = $("<div>");
     cell.addClass("calendar-day");
 
     let ymd = fmtYMD(d);
@@ -42,6 +42,33 @@ const calendar = (y, m, d) => {
     cell.append($("<div>").addClass("date-num").text(d.getDate()));
     cell.append($("<div>").addClass("items"));
 
+    $.ajax({
+      url: "/api/projects/" + projectId + "/issues/range",
+      type: "GET",
+      data: {
+        start: fmtYMD(d),
+        end: fmtYMD(d),
+      },
+      success: function (issues) {
+        let days = $("[data-date='" + ymd + "']");
+        for (let i = 0; i < issues.length; i++) {
+          let issue = issues[i];
+          let status = issue.status;
+          let _id = issue._id;
+          let btn = $("<button>");
+          btn.addClass("Status");
+          btn.text(status);
+
+          btn.on("click", () => {
+            showIssueDetailModal(issue);
+          });
+
+          let item = days.find(".items");
+          item.append(btn);
+        }
+      },
+    });
+
     // 다른 달이면 다름
     if (d.getMonth() !== month - 1) cell.addClass("other-month");
 
@@ -49,16 +76,35 @@ const calendar = (y, m, d) => {
     let today = new Date();
     if (fmtYMD(d) === fmtYMD(today)) cell.addClass("today");
 
-    cell.on("click", () => {
-      alert("clicked");
-    });
-
     dayList.append(cell);
   }
 };
 
+/**
+ * 달력 이슈 버튼 클릭 시 상세 모달에 title, createdBy, createdAt, status, dueDate, comment 표시
+ */
+function showIssueDetailModal(issue) {
+  $("#modal-detailInfo-title").text(issue.title || "-");
+  $("#modal-detailInfo-description").text(issue.description || "-");
+  $("#modal-detailInfo-createdAt").text(formatDateTime(issue.created_at));
+  $("#modal-detailInfo-status").text(issue.status || "-");
+  $("#modal-detailInfo-dueDate").text(issue.due_date ? issue.due_date.slice(0, 10) : "-");
+  $("#modal-detailInfo-comment").text(issue.commnets || "(없음)");
+  new bootstrap.Modal($("#modal-detailInfo")).show();
+}
+
+function formatDateTime(isoStr) {
+  if (!isoStr) return "-";
+  try {
+    let d = new Date(isoStr);
+    return isNaN(d.getTime()) ? isoStr : d.toLocaleString("ko-KR");
+  } catch (_) {
+    return isoStr;
+  }
+}
+
 // 이전달로 이동
-const btnPrev = () => {
+const btnPrev = (projectId) => {
   let btnPrev = $("#btnPrev");
   btnPrev.on("click", (num) => {
     let dayList = $("#calendar-days");
@@ -69,12 +115,12 @@ const btnPrev = () => {
     let tmpY = curDate.getFullYear();
     let tmpM = curDate.getMonth() + 1;
 
-    calendar(tmpY, tmpM, 1);
+    calendar(tmpY, tmpM, 1, projectId);
   });
 };
 
 // 다음 달로 이동
-const btnNext = () => {
+const btnNext = (projectId) => {
   let btnNext = $("#btnNext");
   btnNext.on("click", () => {
     let dayList = $("#calendar-days");
@@ -85,24 +131,7 @@ const btnNext = () => {
     let tmpY = curDate.getFullYear();
     let tmpM = curDate.getMonth() + 1;
 
-    calendar(tmpY, tmpM, 1);
-  });
-};
-
-// All 버튼 클릭
-const btnAll = () => {
-  let btnAll = $("#all");
-
-  btnAll.on("click", () => {
-    let days = $("[data-date='2026-03-05']");
-
-    let btn = $("<button>");
-    btn.addClass("Status");
-    btn.text("TODO");
-
-    let item = days.find(".items");
-
-    item.append(btn);
+    calendar(tmpY, tmpM, 1, projectId);
   });
 };
 

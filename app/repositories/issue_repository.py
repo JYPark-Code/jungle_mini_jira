@@ -11,22 +11,20 @@ def create_issue(db, doc):
     result = db.issues.insert_one(doc)
     return str(result.inserted_id)
 
-
-def find_by_project(db, project_id):
+# 내림차순 필요할 경우 파라미터 -1 쓰기.
+def find_by_project(db, project_id, sort_order=1):
     return list(
-        db.issues.find({"project_id": ObjectId(project_id)})
+        db.issues.find({"project_id": ObjectId(project_id)}).sort("due_date", sort_order)
     )
 
 
-def find_by_range(db, project_id, start_date, end_date):
+def find_by_range(db, project_id, start_date, end_date, sort_order=1):
     return list(
         db.issues.find({
             "project_id": ObjectId(project_id),
-            "due_date": {
-                "$gte": start_date,
-                "$lte": end_date,
-            },
-        })
+            "start_date": {"$lte": end_date},
+            "due_date": {"$gte": start_date},
+        }).sort("due_date", sort_order)
     )
 
 
@@ -63,11 +61,8 @@ def update_fields_if_version(db, issue_id, expected_version, patch, actor_id):
     return result.modified_count == 1
 
 
-def delete_if_creator(db, issue_id, actor_id):
-    result = db.issues.delete_one({
-        "_id": ObjectId(issue_id),
-        "created_by": actor_id,
-    })
+def delete_issue(db, issue_id):
+    result = db.issues.delete_one({"_id": ObjectId(issue_id)})
     return result.deleted_count == 1
 
 
