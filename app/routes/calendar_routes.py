@@ -82,6 +82,18 @@ def _remaining_text(due_value):
         return f"{hours}시간 {mins}분 남음"
     return f"{mins}분 남음"
 
+# status 시간 추가
+def _safe_due_date(issue):
+    d = issue.get("due_date")
+    if isinstance(d, datetime):
+        return d
+    if isinstance(d, str) and d.strip():
+        try:
+            return datetime.fromisoformat(d)
+        except ValueError:
+            return datetime.max
+    return datetime.max
+
 
 @calendar_bp.route("/status")
 def status_view():
@@ -118,6 +130,9 @@ def status_view():
             str(issue.get("created_by")), "Unknown User"
         )
         issue["remaining_text"] = _remaining_text(issue.get("due_date"))
+
+    # 4.5) 안전 sorting 추가
+    all_issues.sort(key=_safe_due_date)
 
     # 5) 공통 템플릿 변수
     me = find_by_id(db, user_id)
