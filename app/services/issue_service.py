@@ -4,7 +4,7 @@ from __future__ import annotations
 from bson import ObjectId
 from datetime import datetime
 
-from app.models.schema import build_issue
+from app.models.schema import build_issue, parse_date
 from app.models.serializers import serialize_issue
 from app.models.validators import validate_issue
 
@@ -95,10 +95,11 @@ def update_issue_fields_service(db, issue_id, expected_version, payload, actor_i
             raise ValueError("invalid status")
 
     allowed_fields = {"title", "description", "start_date", "due_date", "status"}
+    date_fields = {"start_date", "due_date"}
     patch = {}
     for k, v in payload.items():
-        if k in allowed_fields:
-            patch[k] = v
+        if k in allowed_fields and v != "" and v is not None:
+            patch[k] = parse_date(v) if k in date_fields else v
 
     if not patch:
         raise ValueError("no updatable fields")

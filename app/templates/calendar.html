@@ -42,10 +42,10 @@
           <button type="button" id="btnNext" class="btn btn-outline-secondary btn-sm">▷</button>
         </div>
         <div class="d-flex flex-wrap gap-1">
-          <button type="button" id="all" class="btn btn-outline-primary btn-sm">All</button>
-          <button type="button" id="Todo" class="btn btn-outline-primary btn-sm">TO DO</button>
-          <button type="button" class="btn btn-outline-primary btn-sm">In Progress</button>
-          <button type="button" class="btn btn-outline-primary btn-sm">Done</button>
+          <button type="button" id="all" class="btn btn-light btn-sm">All</button>
+          <button type="button" id="Todo" class="btn btn-danger btn-sm">TO DO</button>
+          <button type="button" id="inProgress" class="btn btn-primary btn-sm">In Progress</button>
+          <button type="button" id="done" class="btn btn-success btn-sm">Done</button>
         </div>
       </div>
 
@@ -178,6 +178,7 @@
         calendar(y, m, d, projectId);
         btnPrev(projectId);
         btnNext(projectId);
+        initStatusFilter();
         dateMin();
       });
 

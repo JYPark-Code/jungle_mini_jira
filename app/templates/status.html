@@ -16,36 +16,45 @@
             <h2 class="mb-0">Issue Status</h2>
         </div>
 
-        <!-- 프로젝트 선택(옵션) -->
-        <div class="mb-3">
-            <label class="form-label fw-bold d-block mb-1">프로젝트</label>
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="projectDropdown"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                    전체 프로젝트
-                </button>
-                <!-- ^  프로젝트 보여주는 드롭다운  -->
-                <ul class="dropdown-menu" aria-labelledby="projectDropdown">
-                    <li>
-                        <a class="dropdown-item active" href="#" data-project-id="">전체 프로젝트</a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    {% for p in projects %}
-                    {% set related_issues = issues | selectattr('project_id', 'equalto', p._id) | list %}
-                    {% if related_issues | length > 0 %}
-                    <li>
-                        <a class="dropdown-item" href="#" data-project-id="{{ p._id }}">
-                            {{ p.name or p.title or p._id }}
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% endfor %}
-                </ul>
+        <!-- 프로젝트 선택(좌) + 상태 필터 버튼(우) -->
+        <div class="mb-3 d-flex flex-wrap justify-content-between align-items-end gap-2">
+            <div>
+                <label class="form-label fw-bold d-block mb-1">프로젝트</label>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="projectDropdown"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        전체 프로젝트
+                    </button>
+                    <!-- ^  프로젝트 보여주는 드롭다운  -->
+                    <ul class="dropdown-menu" aria-labelledby="projectDropdown">
+                        <li>
+                            <a class="dropdown-item active" href="#" data-project-id="">전체 프로젝트</a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        {% for p in projects %}
+                        {% set related_issues = issues | selectattr('project_id', 'equalto', p._id) | list %}
+                        {% if related_issues | length > 0 %}
+                        <li>
+                            <a class="dropdown-item" href="#" data-project-id="{{ p._id }}">
+                                {{ p.name or p.title or p._id }}
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="form-text">
+                    프로젝트를 선택하세요.
+                </div>
             </div>
-            <div class="form-text">
-                프로젝트를 선택하세요.
+
+            <div class="d-flex flex-wrap gap-1">
+                <button type="button" id="all" class="btn btn-outline-primary btn-sm">All</button>
+                <button type="button" id="Todo" class="btn btn-outline-primary btn-sm">TO DO</button>
+                <button type="button" id="inProgress" class="btn btn-outline-primary btn-sm">In Progress</button>
+                <button type="button" id="done" class="btn btn-outline-primary btn-sm">Done</button>
             </div>
         </div>
 
@@ -67,8 +76,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for issue in issues|sort(attribute='due_date') %}
-                        <tr data-project-id="{{ issue.project_id }}">
+                        {% for issue in issues %}
+                        <tr data-project-id="{{ issue.project_id }}" data-status="{{ issue.status }}">
                             <td>{{ issue.project_name }}</td>
                             <td>
                                 <strong>{{ issue.title }}</strong><br>
@@ -76,7 +85,7 @@
                             </td>
                             <td>{{ issue.creator_name }}</td>
                             <td><span class="badge bg-secondary">{{ issue.status }}</span></td>
-                            <td>{{ issue.due_date.strftime('%Y-%m-%d-%H-%M-%S') if issue.due_date else '-' }}</td>
+                            <td>{{ issue.due_date if issue.due_date else '-' }}</td>
                             <td>{{ issue.remaining_text }}</td>
                         </tr>
                         {% endfor %}
@@ -98,6 +107,37 @@
             const items = document.querySelectorAll('.dropdown-menu .dropdown-item');
             const rows = document.querySelectorAll('tbody tr[data-project-id]');
 
+            // 상태 필터: ALL / TODO / IN_PROGRESS / DONE
+            window.statusFilter = "ALL";
+
+            function applyFilters() {
+                const f = window.statusFilter || "ALL";
+                const activeItem = document.querySelector('.dropdown-menu .dropdown-item.active');
+                const projectId = activeItem ? activeItem.getAttribute('data-project-id') || '' : '';
+
+                rows.forEach(function (row) {
+                    const rowProjectId = row.getAttribute('data-project-id') || '';
+                    const rowStatus = (row.getAttribute('data-status') || 'TODO').toUpperCase();
+
+                    const projectMatch = !projectId || projectId === rowProjectId;
+
+                    let statusMatch = true;
+                    if (f !== "ALL") {
+                        statusMatch = rowStatus === f;
+                    }
+
+                    row.style.display = projectMatch && statusMatch ? '' : 'none';
+                });
+
+                // 버튼 active 상태 갱신
+                $("#all, #Todo, #inProgress, #done").removeClass("active");
+                if (f === "ALL") $("#all").addClass("active");
+                else if (f === "TODO") $("#Todo").addClass("active");
+                else if (f === "IN_PROGRESS") $("#inProgress").addClass("active");
+                else if (f === "DONE") $("#done").addClass("active");
+            }
+
+            // 프로젝트 드롭다운 클릭
             items.forEach(function (item) {
                 item.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -109,18 +149,30 @@
                     items.forEach(function (it) { it.classList.remove('active'); });
                     this.classList.add('active');
 
-                    const projectId = this.getAttribute('data-project-id');
-
-                    rows.forEach(function (row) {
-                        const rowProjectId = row.getAttribute('data-project-id') || '';
-                        if (!projectId || projectId === rowProjectId) {
-                            row.style.display = '';
-                        } else {
-                            row.style.display = 'none';
-                        }
-                    });
+                    applyFilters();
                 });
             });
+
+            // 상태 필터 버튼 클릭
+            $("#all").off("click").on("click", function () {
+                window.statusFilter = "ALL";
+                applyFilters();
+            });
+            $("#Todo").off("click").on("click", function () {
+                window.statusFilter = "TODO";
+                applyFilters();
+            });
+            $("#inProgress").off("click").on("click", function () {
+                window.statusFilter = "IN_PROGRESS";
+                applyFilters();
+            });
+            $("#done").off("click").on("click", function () {
+                window.statusFilter = "DONE";
+                applyFilters();
+            });
+
+            // 초기 적용
+            applyFilters();
         })();
     </script>
 </body>

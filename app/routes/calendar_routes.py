@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, current_app, request
 from app.repositories import project_repository as project_repo
 from app.repositories import issue_repository as issue_repo
-from app.repositories.user_repository import find_by_id
+from app.repositories.user_repository import find_by_id, find_by_ids
 from datetime import datetime
 
 calendar_bp = Blueprint("calendar", __name__)
@@ -57,10 +57,13 @@ def _remaining_text(due_value):
     if not due_value:
         return "마감일 없음"
 
-    if isinstance(due_value, datetime):
-        due = due_value
-    else:
-        due = datetime.fromisoformat(str(due_value))
+    try:
+        if isinstance(due_value, datetime):
+            due = due_value
+        else:
+            due = datetime.fromisoformat(str(due_value).strip())
+    except (ValueError, TypeError):
+        return "마감일 오류"
 
     now = datetime.now()
     delta = due - now
@@ -79,6 +82,18 @@ def _remaining_text(due_value):
         return f"{hours}시간 {mins}분 남음"
     return f"{mins}분 남음"
 
+# status 시간 추가
+def _safe_due_date(issue):
+    d = issue.get("due_date")
+    if isinstance(d, datetime):
+        return d
+    if isinstance(d, str) and d.strip():
+        try:
+            return datetime.fromisoformat(d)
+        except ValueError:
+            return datetime.max
+    return datetime.max
+
 
 @calendar_bp.route("/status")
 def status_view():
@@ -92,19 +107,15 @@ def status_view():
     projects = project_repo.list_by_member(db, user_id)
     project_name_map = {str(p["_id"]): p["name"] for p in projects}
 
-    # 2) 전체 이슈 로드
-    all_issues = []
-    for p_id in project_name_map:
-        all_issues.extend(issue_repo.find_by_project(db, p_id))
+    # 2) 전체 이슈 로드 (배치 조회로 N+1 제거)
+    all_issues = issue_repo.find_by_project_ids(db, list(project_name_map.keys()))
 
-    # 3) 생성자 이름 매핑
+    # 3) 생성자 이름 매핑 (배치 조회로 N+1 제거)
     creator_ids = list(
         set(str(i.get("created_by")) for i in all_issues if i.get("created_by"))
     )
-    user_name_map = {}
-    for c_id in creator_ids:
-        u = find_by_id(db, c_id)
-        user_name_map[c_id] = u.get("username", "Unknown") if u else "Unknown"
+    users = find_by_ids(db, creator_ids)
+    user_name_map = {str(u["_id"]): u.get("username", "Unknown") for u in users}
 
     # 4) 이슈별 표시용 필드 추가
     for issue in all_issues:
@@ -116,6 +127,16 @@ def status_view():
         )
         issue["remaining_text"] = _remaining_text(issue.get("due_date"))
 
+    # 4.5) 안전 sorting 추가
+    all_issues.sort(key=_safe_due_date)
+
+    # 4.7) status별 그룹핑 추가
+    issues_by_status = {
+        "TODO": [i for i in all_issues if i.get("status") == "TODO"],
+        "IN_PROGRESS": [i for i in all_issues if i.get("status") == "IN_PROGRESS"],
+        "DONE": [i for i in all_issues if i.get("status") == "DONE"],
+    }
+
     # 5) 공통 템플릿 변수
     me = find_by_id(db, user_id)
     username = me.get("username", "User") if me else "User"
@@ -124,5 +145,6 @@ def status_view():
         "status.html",
         projects=projects,
         issues=all_issues,
+        issues_by_status=issues_by_status,
         username=username,
     )

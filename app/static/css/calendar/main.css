@@ -91,8 +91,6 @@
 
 .Status {
   position: relative;
-  background-color: var(--bs-primary, #0d6efd);
-  color: var(--bs-white, #fff);
   border: 0;
   border-radius: var(--bs-border-radius-sm, 0.25rem);
   width: 90%;

@@ -23,7 +23,9 @@
             </div>
 
             <div class="navbar__right">
-                <button class="info" data-bs-toggle="modal" data-bs-target="#modal">Create_issue</button>
+                <button type="button" class="btn btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#modal">
+                    <span class="me-1">+</span> Create issue
+                </button>
                 &nbsp;
                 <div class="navbar__profile" data-username="{{username}}">
                     <span id="navbarUserInitial" class="navbar__profileInitial"></span>
@@ -52,7 +54,7 @@
                             data-calendar-url="{{ url_for('calendar.calendar_view', project_id=project._id) }}"
                             data-project-id="{{ project._id }}"
                             data-project-name="{{ project.name | default('', true) }}"
-                            data-can-delete="{{ (project.can_delete | default(false, true)) | string | lower }}">
+                            data-can-delete="{{ 'true' if project.owner_id|string == session.get('user_id', '')|string else 'false' }}"> <!-- 프로젝트 주인 == 세션 유저 id시 삭제 -->
                             {% set pname = project.name | default('', true) %}
                             {{ pname[:8] ~ '...' if pname|length > 8 else pname }}
                         </button>
@@ -107,7 +109,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                    <button type="button" class="btn btn-danger" id="projectDeleteBtn" disabled>삭제</button>
+                    <button type="button" class="btn btn-danger" id="projectDeleteBtn">삭제</button>
                     <button type="button" class="btn btn-primary" id="projectOpenBtn">캘린더 열기</button>
                 </div>
             </div>

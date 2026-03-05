@@ -54,17 +54,16 @@ const calendar = (y, m, d, projectId) => {
         for (let i = 0; i < issues.length; i++) {
           let issue = issues[i];
           let title = issue.title;
-          let btn = $("<button>");
-          btn.addClass("Status");
-          btn.text(title);
-
+          var status = (issue.status || "TODO").toUpperCase();
+          var statusClass = status === "IN_PROGRESS" ? "btn-primary" : status === "DONE" ? "btn-success" : "btn-danger";
+          var btn = $("<button>").addClass("Status btn btn-sm " + statusClass).attr("data-status", status).text(title);
           btn.on("click", () => {
             showIssueDetailModal(issue, issues, i);
           });
-
           let item = days.find(".items");
           item.append(btn);
         }
+        applyStatusFilter();
       },
     });
 
@@ -271,10 +270,40 @@ const btnNext = (projectId) => {
   });
 };
 
-const btnTodo = () => {
-  let btnTodo = $("#Todo");
+/** 상태 필터: ALL / TODO / IN_PROGRESS / DONE */
+window.calendarStatusFilter = "ALL";
 
-  btnTodo.on("click", () => {});
+function applyStatusFilter() {
+  var f = window.calendarStatusFilter || "ALL";
+  $("#calendar-days .Status").each(function () {
+    var s = $(this).attr("data-status") || "TODO";
+    $(this).toggle(f === "ALL" || s === f);
+  });
+  $("#all, #Todo, #inProgress, #done").removeClass("active");
+  if (f === "ALL") $("#all").addClass("active");
+  else if (f === "TODO") $("#Todo").addClass("active");
+  else if (f === "IN_PROGRESS") $("#inProgress").addClass("active");
+  else if (f === "DONE") $("#done").addClass("active");
+}
+
+const initStatusFilter = () => {
+  $("#all").off("click").on("click", function () {
+    window.calendarStatusFilter = "ALL";
+    applyStatusFilter();
+  });
+  $("#Todo").off("click").on("click", function () {
+    window.calendarStatusFilter = "TODO";
+    applyStatusFilter();
+  });
+  $("#inProgress").off("click").on("click", function () {
+    window.calendarStatusFilter = "IN_PROGRESS";
+    applyStatusFilter();
+  });
+  $("#done").off("click").on("click", function () {
+    window.calendarStatusFilter = "DONE";
+    applyStatusFilter();
+  });
+  applyStatusFilter();
 };
 
 const dateMin = () => {
@@ -335,6 +364,8 @@ function saveIssueEdit() {
       $("#issueEditForm").hide();
       $("#alert").removeClass("alert-danger").addClass("alert-success").text("수정되었습니다.");
       new bootstrap.Modal($("#modal1")).show();
+
+      window.location.href = window.location.href;
     },
     error: function (err) {
       var msg = (err.responseJSON && err.responseJSON.message) ? err.responseJSON.message : "수정에 실패했습니다.";
