@@ -1,7 +1,6 @@
 # app/services/project_service.py
 from app.repositories import project_repository as projects
-from app.repositories import invite_repository as invites
-from app.repositories.user_repository import find_by_email, find_by_id
+from app.repositories.user_repository import find_by_email
 
 
 def create_project_service(*, db, name, owner_id):
@@ -23,11 +22,17 @@ def invite_member_service(*, db, project_id, inviter_id, email):
     if project.get("owner_id") != inviter_id:
         raise PermissionError("only owner can invite members")
 
-    # 초대 중복 방지
-    if invites.exists_pending(db, project_id=project_id, email=email):
-        raise ValueError("already invited")
+    # 대상 유저 조회
+    user = find_by_email(db, email)
+    if not user:
+        raise ValueError("가입되지 않은 사용자입니다")
 
-    return invites.create_invite(db, project_id=project_id, email=email, invited_by=inviter_id)
+    target_id = str(user["_id"])
+    if target_id in project.get("member_ids", []):
+        raise ValueError("이미 프로젝트 멤버입니다")
+
+    # 즉시 멤버 추가
+    return projects.add_member(db, project_id, target_id)
 
 
 def list_my_projects_service(*, db, user_id):
@@ -41,26 +46,15 @@ def leave_project_service(*, db, project_id, user_id):
     return projects.remove_member(db, project_id, user_id)
 
 
-def list_my_invites_service(*, db, email):
-    return invites.list_pending_by_email(db, email)
+def remove_member_service(*, db, project_id, owner_id, target_user_id):
+    project = projects.find_by_id(db, project_id)
+    if not project:
+        raise ValueError("project not found")
+    if project.get("owner_id") != owner_id:
+        raise PermissionError("only owner can remove members")
+    if target_user_id == owner_id:
+        raise ValueError("자기 자신은 제거할 수 없습니다")
+    if target_user_id not in project.get("member_ids", []):
+        raise ValueError("해당 유저는 멤버가 아닙니다")
 
-
-def accept_invite_service(*, db, invite_id, user_id):
-    inv = invites.find_by_id(db, invite_id)
-    if not inv:
-        raise ValueError("invite not found")
-    if inv.get("status") != "pending":
-        raise ValueError("invite not found")
-
-    # 초대 대상 본인 확인
-    user = find_by_id(db, user_id)
-    if not user or user.get("email", "").lower() != inv.get("email", "").lower():
-        raise PermissionError("this invite is not for you")
-
-    # 1) invite accepted 처리
-    ok = invites.mark_accepted(db, invite_id, user_id)
-    if not ok:
-        return False
-
-    # 2) project 멤버로 추가
-    return projects.add_member(db, inv["project_id"], user_id)
+    return projects.remove_member(db, project_id, target_user_id)

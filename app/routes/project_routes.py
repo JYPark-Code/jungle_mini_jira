@@ -1,14 +1,12 @@
 # app/routes/project_routes.py
-from flask import Blueprint, current_app, session, redirect, url_for, request, render_template, flash
+from flask import Blueprint, current_app, session, redirect, url_for, request, flash
 
 from app.services.project_service import (
     create_project_service,
     invite_member_service,
     leave_project_service,
-    list_my_invites_service,
-    accept_invite_service,
+    remove_member_service,
 )
-from app.repositories.user_repository import find_by_id
 
 project_bp = Blueprint("project", __name__)
 
@@ -40,7 +38,7 @@ def invite(project_id):
 
     try:
         invite_member_service(db=db, project_id=project_id, inviter_id=user_id, email=email)
-        flash("초대가 완료되었습니다.", "success")
+        flash("멤버가 추가되었습니다.", "success")
     except ValueError as e:
         flash(str(e), "error")
     except PermissionError:
@@ -62,31 +60,21 @@ def leave(project_id):
         flash(str(e), "error")
     return redirect(url_for("calendar.calendar_view"))
 
-@project_bp.route("/invites", methods=["GET"])
-def invites_inbox():
+@project_bp.route("/projects/<project_id>/remove-member", methods=["POST"])
+def remove_member(project_id):
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
 
     db = current_app.mongo
-    user = find_by_id(db, session["user_id"])
-    if not user:
-        return redirect(url_for("auth.logout"))
-
-    pending = list_my_invites_service(db=db, email=user["email"])
-    return render_template("invites.html", invites=pending)
-
-@project_bp.route("/invites/<invite_id>/accept", methods=["POST"])
-def accept_invite(invite_id):
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
-
-    db = current_app.mongo
-    user_id = session["user_id"]
+    owner_id = session["user_id"]
+    target_user_id = request.form.get("user_id", "")
 
     try:
-        accept_invite_service(db=db, invite_id=invite_id, user_id=user_id)
-        flash("초대를 수락했습니다.", "success")
+        remove_member_service(db=db, project_id=project_id, owner_id=owner_id, target_user_id=target_user_id)
+        flash("멤버가 제거되었습니다.", "success")
     except ValueError as e:
         flash(str(e), "error")
+    except PermissionError:
+        flash("멤버 제거 권한이 없습니다.", "error")
 
     return redirect(url_for("calendar.calendar_view"))
