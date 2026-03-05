@@ -31,6 +31,8 @@ def serialize_issue(issue):
     result["created_at"] = _convert_value(result.get("created_at"))
     result["start_date"] = _convert_value(result.get("start_date"))
     result["due_date"] = _convert_value(result.get("due_date"))
+    result["updated_by"] = _convert_value(result.get("updated_by"))
+    result["updated_at"] = _convert_value(result.get("updated_at"))
 
     if "comments" in result:
         result["comments"] = [_serialize_comment(c) for c in result["comments"]]

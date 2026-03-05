@@ -49,6 +49,7 @@ def update_status_if_version(db, issue_id, expected_version, to_status, actor_id
             "$set": {
                 "status": to_status,
                 "updated_by": actor_id,
+                "updated_at": datetime.now(),
             },
             "$inc": {
                 "version": 1,
@@ -63,6 +64,7 @@ def update_fields_if_version(db, issue_id, expected_version, patch, actor_id):
         "$set": {
             **patch,
             "updated_by": actor_id,
+            "updated_at": datetime.now(),
         },
         "$inc": {"version": 1},
     }
