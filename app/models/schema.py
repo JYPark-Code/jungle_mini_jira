@@ -14,6 +14,7 @@ def build_issue(data):
         "description": data.get("description", ""),
         "status": "TODO",
         "created_at": datetime.now(),
+        "start_date": _parse_due_date(data.get("start_date")),
         "due_date": _parse_due_date(data.get("due_date")),
         "version": 1,
         "created_by": data["created_by"],

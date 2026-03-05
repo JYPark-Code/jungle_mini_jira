@@ -36,3 +36,8 @@ def validate_issue(data):
 
     if "project_id" not in data:
         raise ValueError("project_id required")
+
+    start = data.get("start_date")
+    due = data.get("due_date")
+    if start and due and start > due:
+        raise ValueError("start_date must be before or equal to due_date")

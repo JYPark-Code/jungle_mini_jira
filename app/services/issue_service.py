@@ -78,7 +78,7 @@ def update_issue_status_service(db, issue_id, expected_version, to_status, actor
 
 
 def update_issue_fields_service(db, issue_id, expected_version, payload, actor_id):
-    allowed_fields = {"title", "description", "due_date"}
+    allowed_fields = {"title", "description", "start_date", "due_date"}
     patch = {}
     for k, v in payload.items():
         if k in allowed_fields:
