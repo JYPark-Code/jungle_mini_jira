@@ -1,6 +1,15 @@
 from __future__ import annotations
 
-from flask import Blueprint, request, jsonify, current_app, session, redirect, url_for
+from flask import (
+    Blueprint,
+    request,
+    jsonify,
+    current_app,
+    session,
+    redirect,
+    url_for,
+    flash,
+)
 from app.services.issue_service import (
     create_issue_service,
     list_issues_by_project_service,
@@ -100,7 +109,8 @@ def delete_issue(issue_id):
     try:
         delete_issue_service(db, issue_id, user_id)
     except PermissionError:
-        return "삭제 권한이 없습니다.", 403
+        flash("삭제 권한이 없습니다.", "error")
+        return redirect(url_for("calendar.calendar_view"))
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -116,8 +126,8 @@ def add_comment(issue_id):
 
     try:
         add_comment_service(db=db, issue_id=issue_id, actor_id=user_id, content=content)
-    except ValueError:
-        pass
+    except ValueError as e:
+        flash(str(e), "error")
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -133,6 +143,7 @@ def delete_comment(issue_id, comment_id):
     try:
         delete_comment_service(db=db, issue_id=issue_id, comment_id=comment_id, actor_id=user_id)
     except PermissionError:
-        return "삭제 권한이 없습니다.", 403
+        flash("삭제 권한이 없습니다.", "error")
+        return redirect(url_for("calendar.calendar_view"))
 
     return redirect(url_for("calendar.calendar_view"))

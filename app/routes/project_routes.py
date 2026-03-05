@@ -1,5 +1,5 @@
 # app/routes/project_routes.py
-from flask import Blueprint, current_app, session, redirect, url_for, request, render_template
+from flask import Blueprint, current_app, session, redirect, url_for, request, render_template, flash
 
 from app.services.project_service import (
     create_project_service,
@@ -23,8 +23,9 @@ def create_project():
 
     try:
         create_project_service(db=db, name=name, owner_id=user_id)
-    except ValueError:
-        pass
+        flash("프로젝트가 생성되었습니다.", "success")
+    except ValueError as e:
+        flash(str(e), "error")
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -39,10 +40,11 @@ def invite(project_id):
 
     try:
         invite_member_service(db=db, project_id=project_id, inviter_id=user_id, email=email)
-    except ValueError:
-        pass
+        flash("초대가 완료되었습니다.", "success")
+    except ValueError as e:
+        flash(str(e), "error")
     except PermissionError:
-        pass
+        flash("초대 권한이 없습니다.", "error")
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -55,8 +57,9 @@ def leave(project_id):
     user_id = session["user_id"]
     try:
         leave_project_service(db=db, project_id=project_id, user_id=user_id)
-    except ValueError:
-        pass
+        flash("프로젝트에서 나갔습니다.", "success")
+    except ValueError as e:
+        flash(str(e), "error")
     return redirect(url_for("calendar.calendar_view"))
 
 @project_bp.route("/invites", methods=["GET"])
@@ -82,7 +85,8 @@ def accept_invite(invite_id):
 
     try:
         accept_invite_service(db=db, invite_id=invite_id, user_id=user_id)
-    except ValueError:
-        pass
+        flash("초대를 수락했습니다.", "success")
+    except ValueError as e:
+        flash(str(e), "error")
 
     return redirect(url_for("calendar.calendar_view"))
