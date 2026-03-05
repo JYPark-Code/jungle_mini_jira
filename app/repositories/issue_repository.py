@@ -24,8 +24,14 @@ def find_by_range(db, project_id, start_date, end_date, sort_order=1):
         "due_date": {"$gte": start_date},
         "$or": [
             {"start_date": {"$lte": end_date}},
-            {"start_date": None},
-            {"start_date": {"$exists": False}},
+            {
+                "start_date": None,
+                "due_date": {"$lte": end_date},
+            },
+            {
+                "start_date": {"$exists": False},
+                "due_date": {"$lte": end_date},
+            },
         ],
     }
     return list(
