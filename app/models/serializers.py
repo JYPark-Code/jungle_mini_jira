@@ -25,13 +25,14 @@ def _serialize_comment(comment):
 
 
 def serialize_issue(issue):
-    issue["_id"] = _convert_value(issue["_id"])
-    issue["project_id"] = _convert_value(issue["project_id"])
-    issue["created_by"] = _convert_value(issue.get("created_by"))
-    issue["created_at"] = _convert_value(issue.get("created_at"))
-    issue["due_date"] = _convert_value(issue.get("due_date"))
+    result = dict(issue)
+    result["_id"] = _convert_value(result["_id"])
+    result["project_id"] = _convert_value(result["project_id"])
+    result["created_by"] = _convert_value(result.get("created_by"))
+    result["created_at"] = _convert_value(result.get("created_at"))
+    result["due_date"] = _convert_value(result.get("due_date"))
 
-    if "comments" in issue:
-        issue["comments"] = [_serialize_comment(c) for c in issue["comments"]]
+    if "comments" in result:
+        result["comments"] = [_serialize_comment(c) for c in result["comments"]]
 
-    return issue
+    return result

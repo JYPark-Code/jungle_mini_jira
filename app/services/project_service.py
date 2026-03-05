@@ -1,7 +1,7 @@
 # app/services/project_service.py
 from app.repositories import project_repository as projects
 from app.repositories import invite_repository as invites
-from app.repositories.user_repository import find_by_email
+from app.repositories.user_repository import find_by_email, find_by_id
 
 
 def create_project_service(*, db, name, owner_id):
@@ -51,6 +51,11 @@ def accept_invite_service(*, db, invite_id, user_id):
         raise ValueError("invite not found")
     if inv.get("status") != "pending":
         raise ValueError("invite not found")
+
+    # 초대 대상 본인 확인
+    user = find_by_id(db, user_id)
+    if not user or user.get("email", "").lower() != inv.get("email", "").lower():
+        raise PermissionError("this invite is not for you")
 
     # 1) invite accepted 처리
     ok = invites.mark_accepted(db, invite_id, user_id)

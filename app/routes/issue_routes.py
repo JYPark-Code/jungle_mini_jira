@@ -35,6 +35,8 @@ def create_issue(project_id):
     try:
         created = create_issue_service(db=db, project_id=project_id, payload=payload, actor_id=user_id)
         return jsonify(created), 201
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
     except ValueError as e:
         return jsonify({"message": str(e)}), 400
 
@@ -45,7 +47,15 @@ def list_issues_by_project(project_id):
         return jsonify({"message": "login required"}), 401
 
     db = current_app.mongo
-    issues = list_issues_by_project_service(db=db, project_id=project_id)
+    user_id = session["user_id"]
+
+    try:
+        issues = list_issues_by_project_service(db=db, project_id=project_id, actor_id=user_id)
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
     return jsonify(issues), 200
 
 
@@ -60,7 +70,15 @@ def list_issues_by_range(project_id):
         return jsonify({"message": "start and end query params are required"}), 400
 
     db = current_app.mongo
-    issues = list_issues_by_range_service(db=db, project_id=project_id, start_date=start, end_date=end)
+    user_id = session["user_id"]
+
+    try:
+        issues = list_issues_by_range_service(db=db, project_id=project_id, start_date=start, end_date=end, actor_id=user_id)
+    except PermissionError as e:
+        return jsonify({"message": str(e)}), 403
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
     return jsonify(issues), 200
 
 

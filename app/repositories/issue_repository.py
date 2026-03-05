@@ -63,11 +63,8 @@ def update_fields_if_version(db, issue_id, expected_version, patch, actor_id):
     return result.modified_count == 1
 
 
-def delete_if_creator(db, issue_id, actor_id):
-    result = db.issues.delete_one({
-        "_id": ObjectId(issue_id),
-        "created_by": actor_id,
-    })
+def delete_issue(db, issue_id):
+    result = db.issues.delete_one({"_id": ObjectId(issue_id)})
     return result.deleted_count == 1
 
 

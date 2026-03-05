@@ -2,15 +2,28 @@
 from __future__ import annotations
 
 from bson import ObjectId
+from datetime import datetime
 
 from app.models.schema import build_issue
 from app.models.serializers import serialize_issue
 from app.models.validators import validate_issue
 
 from app.repositories import issue_repository as repo
+from app.repositories import project_repository as project_repo
+
+
+def _check_membership(db, project_id, user_id):
+    project = project_repo.find_by_id(db, project_id)
+    if not project:
+        raise ValueError("project not found")
+    if user_id not in project.get("member_ids", []):
+        raise PermissionError("not a member of this project")
+    return project
 
 
 def create_issue_service(db, project_id, payload, actor_id):
+    _check_membership(db, project_id, actor_id)
+
     data = dict(payload)
     data["project_id"] = project_id
     validate_issue(data)
@@ -24,14 +37,27 @@ def create_issue_service(db, project_id, payload, actor_id):
     return serialize_issue(created)
 
 
-def list_issues_by_project_service(db, project_id):
+def list_issues_by_project_service(db, project_id, actor_id):
+    _check_membership(db, project_id, actor_id)
     issues = repo.find_by_project(db, project_id)
     return [serialize_issue(i) for i in issues]
 
 
-def list_issues_by_range_service(db, project_id, start_date, end_date):
-    issues = repo.find_by_range(db, project_id, start_date, end_date)
+def list_issues_by_range_service(db, project_id, start_date, end_date, actor_id):
+    _check_membership(db, project_id, actor_id)
+
+    start_dt = datetime.fromisoformat(start_date)
+    end_dt = datetime.fromisoformat(end_date)
+
+    issues = repo.find_by_range(db, project_id, start_dt, end_dt)
     return [serialize_issue(i) for i in issues]
+
+
+def _is_owner_or_creator(db, issue, actor_id):
+    if issue.get("created_by") == actor_id:
+        return True
+    project = project_repo.find_by_id(db, issue["project_id"])
+    return project and project.get("owner_id") == actor_id
 
 
 def update_issue_status_service(db, issue_id, expected_version, to_status, actor_id):
@@ -39,8 +65,8 @@ def update_issue_status_service(db, issue_id, expected_version, to_status, actor
     if not issue:
         raise ValueError("issue not found")
 
-    if issue.get("created_by") != actor_id:
-        raise PermissionError("only creator can change status")
+    if not _is_owner_or_creator(db, issue, actor_id):
+        raise PermissionError("only creator or project owner can change status")
 
     allowed = {"TODO", "IN_PROGRESS", "DONE"}
     if to_status not in allowed:
@@ -74,11 +100,14 @@ def get_issue_service(db, issue_id):
 
 
 def delete_issue_service(db, issue_id, actor_id):
-    deleted = repo.delete_if_creator(db, issue_id, actor_id)
+    issue = repo.find_by_id(db, issue_id)
+    if not issue:
+        raise ValueError("issue not found")
 
-    if not deleted:
-        raise PermissionError("only creator can delete issue")
+    if not _is_owner_or_creator(db, issue, actor_id):
+        raise PermissionError("only creator or project owner can delete issue")
 
+    repo.delete_issue(db, issue_id)
     return True
 
 
