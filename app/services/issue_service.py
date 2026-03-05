@@ -49,7 +49,16 @@ def list_issues_by_range_service(db, project_id, start_date, end_date, actor_id,
     start_dt = datetime.fromisoformat(start_date)
     end_dt = datetime.fromisoformat(end_date)
 
-    issues = repo.find_by_range(db, project_id, start_dt, end_dt, sort_order=sort_order)
+    issues = repo.find_by_range(db, project_id, start_dt, end_dt)
+
+    # 기간이 긴 순서로 정렬 (start_date 빠른 순 → 같으면 due_date 늦은 순)
+    def _sort_key(issue):
+        s = issue.get("start_date") or issue.get("due_date") or datetime.min
+        d = issue.get("due_date") or datetime.min
+        return s, -d.timestamp()
+
+    issues.sort(key=_sort_key)
+
     return [serialize_issue(i) for i in issues]
 
 
