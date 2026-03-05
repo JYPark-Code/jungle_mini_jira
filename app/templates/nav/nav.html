@@ -18,11 +18,13 @@
                     <ul class="navbar__list">
                         <a class="navbar__Calendar" href="{{ url_for('calendar.calendar_view') }}">📅 Calendar</a>
                         <a class="navbar__Status" href="{{ url_for('calendar.status_view') }}">📑 Status</a>
-                    </ul> 
+                    </ul>
                 </nav>
             </div>
+
             <div class="navbar__right">
                 <button class="info" data-bs-toggle="modal" data-bs-target="#modal">Create_issue</button>
+                &nbsp;
                 <div class="navbar__profile" data-username="{{username}}">
                     <span id="navbarUserInitial" class="navbar__profileInitial"></span>
                 </div>
@@ -45,8 +47,10 @@
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         {% for project in projects %}
                         <a href="{{ url_for('calendar.calendar_view', project_id=project._id) }}"
-                            class="btn {{'btn-primary' if project._id|string == selected_project_id|string else 'btn-outline-primary'}} btn-sm">
-                            {{ project.name }}
+                            class="btn navbar__projectBtn {{'btn-primary' if project._id|string == selected_project_id|string else 'btn-outline-primary'}} btn-sm"
+                            title="{{ project.name | default('', true) }}">
+                            {% set pname = project.name | default('', true) %}
+                            {{ pname[:8] ~ '...' if pname|length > 8 else pname }}
                         </a>
                         {% endfor %}
                     </div>
@@ -63,13 +67,14 @@
 
                     <hr />
                     <div class="mt-4">
-                            <form action="{{ url_for('project.invite', project_id=selected_project_id) }}" method="POST">
-                                <p class="text-muted" style="text-align: left">팀원 초대 (이메일)</p>
-                                <div class="input-group">
-                                    <input type="email" name="email" class="form-control" placeholder="example@company.com" required />
-                                    <button type="submit" class="btn btn-primary">초대</button>
-                                </div>
-                            </form>
+                        <form action="{{ url_for('project.invite', project_id=selected_project_id) }}" method="POST">
+                            <p class="text-muted" style="text-align: left">팀원 초대 (이메일)</p>
+                            <div class="input-group">
+                                <input type="email" name="email" class="form-control" placeholder="example@company.com"
+                                    required />
+                                <button type="submit" class="btn btn-primary">초대</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
                 <div class="modal-footer">
