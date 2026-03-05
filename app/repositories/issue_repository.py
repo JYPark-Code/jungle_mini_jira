@@ -18,6 +18,13 @@ def find_by_project(db, project_id, sort_order=1):
     )
 
 
+def find_by_project_ids(db, project_ids, sort_order=1):
+    object_ids = [ObjectId(pid) for pid in project_ids]
+    return list(
+        db.issues.find({"project_id": {"$in": object_ids}}).sort("due_date", sort_order)
+    )
+
+
 def find_by_range(db, project_id, start_date, end_date, sort_order=1):
     query = {
         "project_id": ObjectId(project_id),

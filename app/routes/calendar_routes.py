@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, session, redirect, url_for, current_app, request
 from app.repositories import project_repository as project_repo
 from app.repositories import issue_repository as issue_repo
-from app.repositories.user_repository import find_by_id
+from app.repositories.user_repository import find_by_id, find_by_ids
 from datetime import datetime
 
 calendar_bp = Blueprint("calendar", __name__)
@@ -107,19 +107,15 @@ def status_view():
     projects = project_repo.list_by_member(db, user_id)
     project_name_map = {str(p["_id"]): p["name"] for p in projects}
 
-    # 2) 전체 이슈 로드
-    all_issues = []
-    for p_id in project_name_map:
-        all_issues.extend(issue_repo.find_by_project(db, p_id))
+    # 2) 전체 이슈 로드 (배치 조회로 N+1 제거)
+    all_issues = issue_repo.find_by_project_ids(db, list(project_name_map.keys()))
 
-    # 3) 생성자 이름 매핑
+    # 3) 생성자 이름 매핑 (배치 조회로 N+1 제거)
     creator_ids = list(
         set(str(i.get("created_by")) for i in all_issues if i.get("created_by"))
     )
-    user_name_map = {}
-    for c_id in creator_ids:
-        u = find_by_id(db, c_id)
-        user_name_map[c_id] = u.get("username", "Unknown") if u else "Unknown"
+    users = find_by_ids(db, creator_ids)
+    user_name_map = {str(u["_id"]): u.get("username", "Unknown") for u in users}
 
     # 4) 이슈별 표시용 필드 추가
     for issue in all_issues:
