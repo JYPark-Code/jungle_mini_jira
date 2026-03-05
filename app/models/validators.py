@@ -1,5 +1,6 @@
 # models/validators.py
 import re
+from datetime import datetime
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -39,5 +40,10 @@ def validate_issue(data):
 
     start = data.get("start_date")
     due = data.get("due_date")
-    if start and due and start > due:
-        raise ValueError("start_date must be before or equal to due_date")
+    if start and due:
+        if not isinstance(start, datetime):
+            start = datetime.fromisoformat(start)
+        if not isinstance(due, datetime):
+            due = datetime.fromisoformat(due)
+        if start > due:
+            raise ValueError("start_date must be before or equal to due_date")

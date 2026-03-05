@@ -24,7 +24,6 @@ def create_app(test_config=None):
     from app.routes.issue_routes import issue_bp
     from app.routes.project_routes import project_bp
 
-
     app.register_blueprint(auth_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(issue_bp)

@@ -78,6 +78,12 @@ def update_issue_status_service(db, issue_id, expected_version, to_status, actor
 
 
 def update_issue_fields_service(db, issue_id, expected_version, payload, actor_id):
+    issue = repo.find_by_id(db, issue_id)
+    if not issue:
+        raise ValueError("issue not found")
+
+    _check_membership(db, issue["project_id"], actor_id)
+
     allowed_fields = {"title", "description", "start_date", "due_date"}
     patch = {}
     for k, v in payload.items():
