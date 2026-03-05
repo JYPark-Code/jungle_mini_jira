@@ -38,6 +38,7 @@ def calendar_view():
 
     # 4) 내 초대함 (메일 발송 없이 in-app)
     me = find_by_id(db, user_id)
+    username = me.get("username", "User") if me else "User"
     invites = []
     if me and me.get("email"):
         invites = invite_repo.list_pending_by_email(db, me["email"])
@@ -52,5 +53,6 @@ def calendar_view():
         issues=issues,
         pending_invites_count=len(invites),
         invites=invites,  # 필요하면 템플릿에서 목록도 출력 가능
+        username=username,
         weeks=weeks,
     )

@@ -23,6 +23,8 @@ def validate_signup_form(*, email: str, username: str, password: str, password2:
         return "username은 2자 이상이어야 합니다."
     if not password:
         return "비밀번호를 입력해주세요."
+    if len(password) < 8:
+        return "비밀 번호는 8자 이상이어야 합니다."
     if password != password2:
         return "비밀번호가 일치하지 않습니다."
     return None

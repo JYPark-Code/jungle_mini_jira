@@ -1,4 +1,3 @@
-# models/serializer.py
 # models/serializers.py
 from bson import ObjectId
 from datetime import datetime

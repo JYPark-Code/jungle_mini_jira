@@ -34,7 +34,7 @@ def create_issue(project_id):
 
     try:
         created = create_issue_service(db=db, project_id=project_id, payload=payload, actor_id=user_id)
-        return jsonify(created), 201
+        return jsonify({"message": "이슈 생성 성공", "issue": created}), 201
     except PermissionError as e:
         return jsonify({"message": str(e)}), 403
     except ValueError as e:
@@ -125,9 +125,9 @@ def delete_issue(issue_id):
 
     try:
         delete_issue_service(db, issue_id, user_id)
+        flash("이슈가 삭제되었습니다.", "success")
     except PermissionError:
         flash("삭제 권한이 없습니다.", "error")
-        return redirect(url_for("calendar.calendar_view"))
 
     return redirect(url_for("calendar.calendar_view"))
 
@@ -143,6 +143,7 @@ def add_comment(issue_id):
 
     try:
         add_comment_service(db=db, issue_id=issue_id, actor_id=user_id, content=content)
+        flash("댓글이 등록되었습니다.", "success")
     except ValueError as e:
         flash(str(e), "error")
 
@@ -159,8 +160,8 @@ def delete_comment(issue_id, comment_id):
 
     try:
         delete_comment_service(db=db, issue_id=issue_id, comment_id=comment_id, actor_id=user_id)
+        flash("댓글이 삭제되었습니다.", "success")
     except PermissionError:
         flash("삭제 권한이 없습니다.", "error")
-        return redirect(url_for("calendar.calendar_view"))
 
     return redirect(url_for("calendar.calendar_view"))
