@@ -13,7 +13,7 @@
     <header class="navbar" role="banner">
         <div class="navbar__container">
             <div class="navbar__left">
-                <a href="" class="navbar__Home">Mini-Jira</a>
+                <a href="{{ url_for('calendar.calendar_view') }}" class="navbar__Home">Mini-Jira</a>
                 <nav id="navbarMenu" class="navbar__menu">
                     <ul class="navbar__list">
                         <a class="navbar__Calendar" href="{{ url_for('calendar.calendar_view') }}">📅 Calendar</a>
@@ -46,12 +46,16 @@
 
                     <div class="d-flex flex-wrap gap-2 mb-3">
                         {% for project in projects %}
-                        <a href="{{ url_for('calendar.calendar_view', project_id=project._id) }}"
+                        <button type="button"
                             class="btn navbar__projectBtn {{'btn-primary' if project._id|string == selected_project_id|string else 'btn-outline-primary'}} btn-sm"
-                            title="{{ project.name | default('', true) }}">
+                            title="{{ project.name | default('', true) }}"
+                            data-calendar-url="{{ url_for('calendar.calendar_view', project_id=project._id) }}"
+                            data-project-id="{{ project._id }}"
+                            data-project-name="{{ project.name | default('', true) }}"
+                            data-can-delete="{{ (project.can_delete | default(false, true)) | string | lower }}">
                             {% set pname = project.name | default('', true) %}
                             {{ pname[:8] ~ '...' if pname|length > 8 else pname }}
-                        </a>
+                        </button>
                         {% endfor %}
                     </div>
 
@@ -86,16 +90,40 @@
         </div>
     </div>
 
+    <!-- 프로젝트 열기 / 삭제 선택 모달 -->
+    <div class="modal fade" id="projectActionModal" tabindex="-1" aria-labelledby="projectActionModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectActionModalLabel">프로젝트 작업</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="projectActionProjectName" class="fw-bold mb-2"></p>
+                    <p class="text-muted mb-0">
+                        선택한 프로젝트를 캘린더에서 열거나, 권한이 있는 경우 삭제할 수 있습니다.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-danger" id="projectDeleteBtn" disabled>삭제</button>
+                    <button type="button" class="btn btn-primary" id="projectOpenBtn">캘린더 열기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5">Create Issue</h1>
+                    <h1 class="modal-title fs-5">업무 생성</h1>
                 </div>
                 <div class="modal-body">
                     <!-- Title -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Title</label>
+                        <label class="form-label fw-bold">제목</label>
                         <input type="text" id="title" class="form-control" maxlength="15"
                             placeholder="Enter title (최대 15자리까지)" />
                         <div class="form-text">최대 15자리</div>
@@ -103,25 +131,25 @@
 
                     <!-- Description -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Description</label>
+                        <label class="form-label fw-bold">설명</label>
                         <textarea class="form-control" id="description" rows="4" maxlength="200"
                             placeholder="Enter description (최대 200자리까지)"></textarea>
                         <div class="form-text">최대 200자리</div>
                     </div>
 
                     <!-- Start Date -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Start Date</label>
-                        <input type="datetime-local" class="form-control" id="startDate" step="1" />
-                    </div>
-                    
-                    
-                    
-                    <!-- Due Date -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Due Date</label>
-                        <input type="datetime-local" class="form-control" id="dueDate" step="1" />
-                    </div>
+                                        <div class="mb-3">
+                                                <label class="form-label fw-bold">업무 시작 시간</label>
+                                                <input type="datetime-local" class="form-control" id="startDate"
+                            step="1" />
+                                            </div>
+
+                                        <!-- Due Date -->
+                                        <div class="mb-3">
+                                                <label class="form-label fw-bold">업무 종료 시간</label>
+                                                <input type="datetime-local" class="form-control" id="dueDate"
+                            step="1" />
+                                            </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
@@ -134,7 +162,6 @@
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="modal1" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
@@ -150,6 +177,57 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
+        let currentProjectAction = null;
+
+        function openProjectOptions(calendarUrl, projectId, projectName, canDelete) {
+            const modalEl = document.getElementById("projectActionModal");
+            if (!modalEl) return;
+
+            currentProjectAction = {
+                calendarUrl,
+                projectId,
+                projectName,
+                canDelete,
+            };
+
+            const nameEl = document.getElementById("projectActionProjectName");
+            const deleteBtn = document.getElementById("projectDeleteBtn");
+
+            if (nameEl) {
+                nameEl.textContent = projectName || "";
+            }
+
+            if (deleteBtn) {
+                if (canDelete) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.classList.remove("btn-secondary");
+                    deleteBtn.classList.add("btn-danger");
+                } else {
+                    deleteBtn.disabled = true;
+                    deleteBtn.classList.remove("btn-danger");
+                    deleteBtn.classList.add("btn-secondary");
+                }
+            }
+
+            const modalInstance = new bootstrap.Modal(modalEl);
+            modalInstance.show();
+        }
+
+        function confirmDelete(projectId, projectName) {
+            if (
+                confirm(
+                    projectName +
+                    " 프로젝트를 정말 삭제하시겠습니까?\n프로젝트 안의 모든 이슈도 함께 삭제됩니다."
+                )
+            ) {
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "/projects/" + projectId + "/delete";
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             const profileEl = document.querySelector(".navbar__profile");
             const profileModal = document.getElementById("profileModal");
@@ -183,15 +261,42 @@
                     profileModal.style.display = "none";
                 });
             }
-        });
-        document.addEventListener("DOMContentLoaded", function () {
-            const profileEl = document.querySelector(".navbar__profile");
-            const initialSpan = document.getElementById("navbarUserInitial");
 
+            const initialSpan = document.getElementById("navbarUserInitial");
             if (profileEl && initialSpan) {
                 const username = profileEl.getAttribute("data-username");
                 const initial = username.charAt(0).toUpperCase();
                 initialSpan.textContent = initial;
+            }
+
+            // 프로젝트 버튼 클릭 시 프로젝트 작업 모달 열기
+            const projectButtons = document.querySelectorAll(".navbar__projectBtn");
+            const deleteBtn = document.getElementById("projectDeleteBtn");
+            const openBtn = document.getElementById("projectOpenBtn");
+
+            projectButtons.forEach((btn) => {
+                btn.addEventListener("click", function () {
+                    const calendarUrl = this.dataset.calendarUrl;
+                    const projectId = this.dataset.projectId;
+                    const projectName = this.dataset.projectName || "";
+                    const canDelete = this.dataset.canDelete === "true";
+
+                    openProjectOptions(calendarUrl, projectId, projectName, canDelete);
+                });
+            });
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener("click", function () {
+                    if (!currentProjectAction || !currentProjectAction.canDelete) return;
+                    confirmDelete(currentProjectAction.projectId, currentProjectAction.projectName);
+                });
+            }
+
+            if (openBtn) {
+                openBtn.addEventListener("click", function () {
+                    if (!currentProjectAction || !currentProjectAction.calendarUrl) return;
+                    window.location.href = currentProjectAction.calendarUrl;
+                });
             }
         });
 
