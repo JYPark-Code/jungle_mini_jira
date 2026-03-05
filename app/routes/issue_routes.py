@@ -13,7 +13,6 @@ from app.services.issue_service import (
     create_issue_service,
     list_issues_by_project_service,
     list_issues_by_range_service,
-    update_issue_status_service,
     update_issue_fields_service,
     get_issue_service,
     delete_issue_service,
@@ -89,38 +88,6 @@ def list_issues_by_range(project_id):
     return jsonify(issues), 200
 
 
-@issue_bp.route("/api/issues/<issue_id>/status", methods=["PATCH"])
-def update_issue_status(issue_id):
-    if "user_id" not in session:
-        return jsonify({"message": "login required"}), 401
-
-    payload = request.get_json(silent=True) or {}
-    if "expected_version" not in payload or "to_status" not in payload:
-        return jsonify({"message": "expected_version and to_status are required"}), 400
-
-    db = current_app.mongo
-    user_id = session["user_id"]
-
-    try:
-        ok = update_issue_status_service(
-            db=db,
-            issue_id=issue_id,
-            expected_version=int(payload["expected_version"]),
-            to_status=str(payload["to_status"]),
-            actor_id=user_id,
-        )
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 400
-    except PermissionError as e:
-        return jsonify({"message": str(e)}), 403
-
-    if not ok:
-        current = get_issue_service(db=db, issue_id=issue_id)
-        return jsonify({"message": "version conflict", "current": current}), 409
-
-    updated = get_issue_service(db=db, issue_id=issue_id)
-    return jsonify(updated), 200
-
 @issue_bp.route("/api/issues/<issue_id>/fields", methods=["PATCH"])
 def update_issue_fields(issue_id):
     if "user_id" not in session:
@@ -171,36 +138,34 @@ def delete_issue(issue_id):
     return redirect(url_for("calendar.calendar_view"))
 
 
-@issue_bp.route("/issues/<issue_id>/comments", methods=["POST"])
+@issue_bp.route("/api/issues/<issue_id>/comments", methods=["POST"])
 def add_comment(issue_id):
     if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+        return jsonify({"message": "login required"}), 401
 
     db = current_app.mongo
     user_id = session["user_id"]
-    content = request.form.get("content", "")
+    payload = request.get_json(silent=True) or {}
+    content = payload.get("content", "")
 
-    try:
-        add_comment_service(db=db, issue_id=issue_id, actor_id=user_id, content=content)
-        flash("댓글이 등록되었습니다.", "success")
-    except ValueError as e:
-        flash(str(e), "error")
+    if not content.strip():
+        return jsonify({"message": "empty comment"}), 400
 
-    return redirect(url_for("calendar.calendar_view"))
+    comment_id = add_comment_service(db=db, issue_id=issue_id, actor_id=user_id, content=content)
+    return jsonify({"message": "댓글이 등록되었습니다.", "comment_id": comment_id}), 201
 
 
-@issue_bp.route("/issues/<issue_id>/comments/<comment_id>/delete", methods=["POST"])
+@issue_bp.route("/api/issues/<issue_id>/comments/<comment_id>", methods=["DELETE"])
 def delete_comment(issue_id, comment_id):
     if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+        return jsonify({"message": "login required"}), 401
 
     db = current_app.mongo
     user_id = session["user_id"]
 
     try:
         delete_comment_service(db=db, issue_id=issue_id, comment_id=comment_id, actor_id=user_id)
-        flash("댓글이 삭제되었습니다.", "success")
     except PermissionError:
-        flash("삭제 권한이 없습니다.", "error")
+        return jsonify({"message": "not allowed"}), 403
 
-    return redirect(url_for("calendar.calendar_view"))
+    return jsonify({"message": "댓글이 삭제되었습니다."}), 200

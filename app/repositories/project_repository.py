@@ -36,3 +36,9 @@ def remove_member(db, project_id, user_id):
         {"$pull": {"member_ids": user_id}},
     )
     return result.modified_count == 1
+
+
+def delete_project(db, project_id):
+    db.issues.delete_many({"project_id": ObjectId(project_id)})
+    db.projects.delete_one({"_id": ObjectId(project_id)})
+    return True

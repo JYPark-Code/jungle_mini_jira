@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="ko">
   {% include "nav/nav.html" %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+{% endwith %}
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,7 +43,7 @@
         </div>
         <div class="d-flex flex-wrap gap-1">
           <button type="button" id="all" class="btn btn-outline-primary btn-sm">All</button>
-          <button type="button" id="Todo" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal">TO DO</button>
+          <button type="button" id="Todo" class="btn btn-outline-primary btn-sm">TO DO</button>
           <button type="button" class="btn btn-outline-primary btn-sm">In Progress</button>
           <button type="button" class="btn btn-outline-primary btn-sm">Done</button>
         </div>
@@ -61,8 +69,13 @@
           <div class="modal-header bg-info d-flex justify-content-between align-items-center">
             <h5 class="modal-title mb-0" id="modal-detailInfo-title"></h5>
             <div class="d-flex align-items-center gap-1">
-              <button type="button" onclick="edit()" class="btn btn-primary btn-sm">
+              <button type="button" id="modalPrevIssue" class="btn btn-outline-secondary btn-sm" title="이전 이슈" aria-label="이전 이슈">◀</button>
+              <button type="button" id="modalNextIssue" class="btn btn-outline-secondary btn-sm" title="다음 이슈" aria-label="다음 이슈">▶</button>
+              <button type="button" id="modalEditBtn" onclick="editIssue()" class="btn btn-primary btn-sm">
                 수정
+              </button>
+              <button type="button" id="modalDelBtn" onclick="delIssue()" class="btn btn-primary btn-sm" style="display: none;">
+                삭제
               </button>
               <button
                 type="button"
@@ -74,11 +87,54 @@
           </div>
           <div class="modal-body">
             <div class="d-flex flex-column gap-2 small">
-              <div><strong>생성시간:</strong> <span id="modal-detailInfo-createdAt"></span></div>
+              <div class="d-flex flex-wrap align-items-center gap-3 modal-readonly">
+                <div><strong>생성시간:</strong> <span id="modal-detailInfo-createdAt"></span> </div>
+                <div><strong>생성자:</strong> <span id="modal-detailInfo-creatorName"></span> </div>
+              </div>
+              <div class="modal-readonly"><strong>수정시간:</strong> <span id="modal-detailInfo-updatedAt"></span> </div>
+              <div><strong>업무시작시간:</strong> <span id="modal-detailInfo-startDate"></span></div>
+              <div><strong>업무종료시간:</strong> <span id="modal-detailInfo-dueDate"></span></div>
               <div><strong>설명:</strong><div id="modal-detailInfo-description" class="border rounded p-2 bg-light mt-1"></div></div>
               <div><strong>상태:</strong> <span id="modal-detailInfo-status"></span></div>
-              <div><strong>기한:</strong> <span id="modal-detailInfo-dueDate"></span></div>
-              <div><strong>댓글:</strong><div id="modal-detailInfo-comment" class="border rounded p-2 bg-light mt-1"></div></div>
+              <div><strong>댓글:</strong> <span id="modal-detailInfo-comment-count" class="text-muted small"></span></div>
+              <div id="modal-detailInfo-comment-list" class="border rounded p-2 bg-light mt-1 small"></div>
+              <div id="commentPaging" class="d-flex justify-content-between align-items-center mt-1 small"></div>
+
+              <div id="issueEditForm" class="mt-3 border rounded p-3 bg-light small" style="display: none;">
+                <div class="mb-2 fw-bold">업무 수정</div>
+                <div class="mb-2">
+                  <label class="form-label mb-0">제목</label>
+                  <input type="text" id="editTitle" class="form-control form-control-sm" maxlength="15" />
+                  <span id="editTitleHint" class="text-muted"></span>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label mb-0">설명</label>
+                  <textarea id="editDescription" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label mb-0">업무시작일</label>
+                  <input type="date" id="editStartDate" class="form-control form-control-sm" />
+                </div>
+                <div class="mb-2">
+                  <label class="form-label mb-0">업무종료일</label>
+                  <input type="date" id="editDueDate" class="form-control form-control-sm" />
+                </div>
+                <div class="mb-2">
+                  <label class="form-label mb-0">상태</label>
+                  <select id="editStatus" class="form-select form-select-sm"></select>
+                  <span id="editStatusHint" class="text-muted"></span>
+                </div>
+                <div class="d-flex gap-1">
+                  <button type="button" id="issueEditSave" class="btn btn-primary btn-sm">저장</button>
+                  <button type="button" id="issueEditCancel" class="btn btn-outline-secondary btn-sm">취소</button>
+                </div>
+              </div>
+
+              <div class="mt-2">
+                <label class="form-label small fw-bold">댓글 작성</label>
+                <textarea name="content" id="commentContent" class="form-control form-control-sm" rows="2" placeholder="댓글을 입력하세요" required></textarea>
+                <button class="btn btn-primary btn-sm mt-1" onclick="addComment()">등록</button>
+              </div>
             </div>
           </div>
           <div class="modal-footer"></div>
@@ -111,6 +167,8 @@
     </div>
 
     <script>
+      window.currentUserId = "{{ session.get('user_id', '') }}";
+      window.currentUserName = "{{ username|default('나', true)|e }}";
       $(document).ready(() => {
         const t = new Date();
         const y = t.getFullYear();
@@ -123,9 +181,55 @@
         dateMin();
       });
 
-      const edit = () => {
-        window.location.href = `/api/issues/${issue_id}/edit`;
-      };
+      const editIssue = () => { openIssueEditForm(); };
+
+        const addComment = () => {
+          var issueId = window.currentIssueId;
+          if (!issueId) return;
+          var content = $("#commentContent").val();
+          if (!content || !content.trim()) return;
+
+          $.ajax({
+            url: "/api/issues/" + issueId + "/comments",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ content: content.trim() }),
+            success: function (res) {
+              var username = window.currentUserName || "나";
+              var now = new Date();
+              var createdAtStr = now.toLocaleString("ko-KR");
+              var createdAtIso = now.toISOString();
+              var trimmed = content.trim();
+              var escapedContent = $("<div>").text(trimmed).html();
+              var $item = $("<div>").addClass("border-bottom pb-2 mb-2 comment-item")
+                .append($("<div>").addClass("text-secondary small").text(username + " · " + createdAtStr))
+                .append($("<div>").html(escapedContent));
+              var $list = $("#modal-detailInfo-comment-list");
+              if ($list.children(".comment-item").length === 0 && $list.text().indexOf("댓글이 없습니다") !== -1) {
+                $list.empty();
+              }
+              $list.prepend($item);
+              window.currentIssueComments = window.currentIssueComments || [];
+              window.currentIssueComments.unshift({
+                author_name: username,
+                content: trimmed,
+                created_at: createdAtIso,
+                deleted: false
+              });
+              var $count = $("#modal-detailInfo-comment-count");
+              var m = $count.text().match(/\((\d+)\)/);
+              var n = m ? parseInt(m[1], 10) + 1 : 1;
+              $count.text("(" + n + "건)");
+              $("#commentContent").val("");
+              $("#alert").removeClass("alert-danger").addClass("alert-success").text(res.message);
+              new bootstrap.Modal($("#modal1")).show();
+            },
+            error: function (err) {
+              $("#alert").removeClass("alert-success").addClass("alert-danger").text(err.responseJSON && err.responseJSON.message ? err.responseJSON.message : "댓글 등록에 실패했습니다.");
+              new bootstrap.Modal($("#modal1")).show();
+            },
+          });
+        };
     </script>
   </body>
 </html>

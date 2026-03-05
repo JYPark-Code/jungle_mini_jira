@@ -15,6 +15,7 @@ def _serialize_comment(comment):
     return {
         "id": comment.get("id"),
         "author_id": _convert_value(comment.get("author_id")),
+        "author_name": comment.get("author_name", "Unknown"),
         "content": comment.get("content"),
         "created_at": _convert_value(comment.get("created_at")),
         "deleted": comment.get("deleted", False),
@@ -31,8 +32,16 @@ def serialize_issue(issue):
     result["created_at"] = _convert_value(result.get("created_at"))
     result["start_date"] = _convert_value(result.get("start_date"))
     result["due_date"] = _convert_value(result.get("due_date"))
+    result["updated_by"] = _convert_value(result.get("updated_by"))
+    result["updated_at"] = _convert_value(result.get("updated_at"))
+    result["creator_name"] = result.get("creator_name", "Unknown")
 
     if "comments" in result:
-        result["comments"] = [_serialize_comment(c) for c in result["comments"]]
+        sorted_comments = sorted(
+            result["comments"],
+            key=lambda c: c.get("created_at") or datetime.min,
+            reverse=True,
+        )
+        result["comments"] = [_serialize_comment(c) for c in sorted_comments]
 
     return result

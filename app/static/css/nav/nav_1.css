@@ -1,0 +1,137 @@
+:root {
+  --color-text: #333333;
+  --color-Calendar: #8d24f0;
+  --color-Status: #3d37e8;
+  --color-border-subtle: #e9ecef;
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+  --navbar-height: 70px;
+  --navbar-padding: 1rem;
+}
+
+.navbar__left,
+.navbar__right {
+  display: flex;
+  align-items: center;
+}
+
+.navbar__menu {
+  margin-left: 20px;
+}
+
+.navbar__issue {
+  text-decoration: none;
+  margin-right: 200px;
+  color: var(--color-text);
+  font-weight: bold;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+}
+
+.navbar__profile {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-subtle);
+  margin-right: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  background-color: #ffffff;
+}
+.navbar__profileInitial {
+  text-transform: uppercase; /* 대문자로 표시 */
+}
+.navbar__container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 var(--navbar-padding);
+}
+
+.navbar__Home {
+  text-decoration: none;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin-right: 50px;
+}
+
+.navbar__list {
+  display: flex;
+  align-items: center;
+  list-style: none;
+}
+
+.navbar__Calendar,
+.navbar__Status {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+.navbar__Calendar:hover {
+  border-bottom-color: var(--color-Calendar);
+}
+
+.navbar__Status:hover {
+  border-bottom-color: var(--color-Status);
+}
+
+.navbar__issue {
+  border: none;
+  margin-left: 0.5rem;
+}
+
+.navbar__issue--cta {
+  margin-left: 0.5rem;
+}
+
+.navbar__profile {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-subtle);
+  display: flex-end;
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+.modal-body hr {
+  margin: 20px 0;
+  border-color: var(--color-border-subtle);
+}
+
+.modal-body .input-group {
+  margin-bottom: 10px;
+}
+
+.modal-body .btn-sm {
+  padding: 5px 15px;
+  border-radius: 8px;
+}
+
+#profileModal.modal {
+  position: absolute;
+  display: none;
+  background: none;
+  z-index: 1050;
+}
+
+#profileModal .modal-dialog {
+  margin: 0;
+  max-width: 350px;
+}
+
+#profileModal .modal-content {
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 0px 3px #888585;
+}

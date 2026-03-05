@@ -58,3 +58,14 @@ def remove_member_service(*, db, project_id, owner_id, target_user_id):
         raise ValueError("해당 유저는 멤버가 아닙니다")
 
     return projects.remove_member(db, project_id, target_user_id)
+
+
+def delete_project_service(*, db, project_id, user_id):
+    project = projects.find_by_id(db, project_id)
+    if not project:
+        raise ValueError("project not found")
+    if (project.get("name") or "").strip().lower() == "personal":
+        raise ValueError("기본 프로젝트는 삭제할 수 없습니다")
+    if project.get("owner_id") != user_id:
+        raise PermissionError("only owner can delete project")
+    return projects.delete_project(db, project_id)

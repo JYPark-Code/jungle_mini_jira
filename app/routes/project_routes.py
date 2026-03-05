@@ -6,6 +6,7 @@ from app.services.project_service import (
     invite_member_service,
     leave_project_service,
     remove_member_service,
+    delete_project_service,
 )
 
 project_bp = Blueprint("project", __name__)
@@ -76,5 +77,24 @@ def remove_member(project_id):
         flash(str(e), "error")
     except PermissionError:
         flash("멤버 제거 권한이 없습니다.", "error")
+
+    return redirect(url_for("calendar.calendar_view"))
+
+
+@project_bp.route("/projects/<project_id>/delete", methods=["POST"])
+def delete_project(project_id):
+    if "user_id" not in session:
+        return redirect(url_for("auth.login"))
+
+    db = current_app.mongo
+    user_id = session["user_id"]
+
+    try:
+        delete_project_service(db=db, project_id=project_id, user_id=user_id)
+        flash("프로젝트가 삭제되었습니다.", "success")
+    except ValueError as e:
+        flash(str(e), "error")
+    except PermissionError:
+        flash("삭제 권한이 없습니다.", "error")
 
     return redirect(url_for("calendar.calendar_view"))

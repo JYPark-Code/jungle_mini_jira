@@ -109,3 +109,14 @@
     min-height: 1.75rem;
   }
 }
+
+/* 상세 모달 본문 스크롤 */
+#modal-detailInfo .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* 알림 모달(modal1)이 다른 모달보다 항상 위에 오도록 */
+#modal1.modal {
+  z-index: 1060 !important;
+}
