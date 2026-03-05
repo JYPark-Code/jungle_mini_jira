@@ -49,9 +49,12 @@ def list_issues_by_project(project_id):
 
     db = current_app.mongo
     user_id = session["user_id"]
+    sort_order = int(request.args.get("sort_order", "1"))
+    if sort_order not in (1, -1):
+        sort_order = 1
 
     try:
-        issues = list_issues_by_project_service(db=db, project_id=project_id, actor_id=user_id)
+        issues = list_issues_by_project_service(db=db, project_id=project_id, actor_id=user_id, sort_order=sort_order)
     except PermissionError as e:
         return jsonify({"message": str(e)}), 403
     except ValueError as e:
@@ -72,9 +75,12 @@ def list_issues_by_range(project_id):
 
     db = current_app.mongo
     user_id = session["user_id"]
+    sort_order = int(request.args.get("sort_order", "1"))
+    if sort_order not in (1, -1):
+        sort_order = 1
 
     try:
-        issues = list_issues_by_range_service(db=db, project_id=project_id, start_date=start, end_date=end, actor_id=user_id)
+        issues = list_issues_by_range_service(db=db, project_id=project_id, start_date=start, end_date=end, actor_id=user_id, sort_order=sort_order)
     except PermissionError as e:
         return jsonify({"message": str(e)}), 403
     except ValueError as e:

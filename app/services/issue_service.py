@@ -37,19 +37,19 @@ def create_issue_service(db, project_id, payload, actor_id):
     return serialize_issue(created)
 
 
-def list_issues_by_project_service(db, project_id, actor_id):
+def list_issues_by_project_service(db, project_id, actor_id, sort_order=1):
     _check_membership(db, project_id, actor_id)
-    issues = repo.find_by_project(db, project_id)
+    issues = repo.find_by_project(db, project_id, sort_order=sort_order)
     return [serialize_issue(i) for i in issues]
 
 
-def list_issues_by_range_service(db, project_id, start_date, end_date, actor_id):
+def list_issues_by_range_service(db, project_id, start_date, end_date, actor_id, sort_order=1):
     _check_membership(db, project_id, actor_id)
 
     start_dt = datetime.fromisoformat(start_date)
     end_dt = datetime.fromisoformat(end_date)
 
-    issues = repo.find_by_range(db, project_id, start_dt, end_dt)
+    issues = repo.find_by_range(db, project_id, start_dt, end_dt, sort_order=sort_order)
     return [serialize_issue(i) for i in issues]
 
 
