@@ -42,6 +42,9 @@ def calendar_view():
     if me and me.get("email"):
         invites = invite_repo.list_pending_by_email(db, me["email"])
 
+    # 5) Calendar week
+    weeks = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
     return render_template(
         "calendar.html",
         projects=projects,
@@ -49,4 +52,5 @@ def calendar_view():
         issues=issues,
         pending_invites_count=len(invites),
         invites=invites,  # 필요하면 템플릿에서 목록도 출력 가능
+        weeks=weeks,
     )
