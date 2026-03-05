@@ -11,14 +11,14 @@ def create_issue(db, doc):
     result = db.issues.insert_one(doc)
     return str(result.inserted_id)
 
-
-def find_by_project(db, project_id):
+# 내림차순 필요할 경우 파라미터 -1 쓰기.
+def find_by_project(db, project_id, sort_order=1):
     return list(
-        db.issues.find({"project_id": ObjectId(project_id)})
+        db.issues.find({"project_id": ObjectId(project_id)}).sort("due_date", sort_order)
     )
 
 
-def find_by_range(db, project_id, start_date, end_date):
+def find_by_range(db, project_id, start_date, end_date, sort_order=1):
     return list(
         db.issues.find({
             "project_id": ObjectId(project_id),
@@ -26,7 +26,7 @@ def find_by_range(db, project_id, start_date, end_date):
                 "$gte": start_date,
                 "$lte": end_date,
             },
-        })
+        }).sort("due_date", sort_order)
     )
 
 
