@@ -35,6 +35,11 @@ def serialize_issue(issue):
     result["updated_at"] = _convert_value(result.get("updated_at"))
 
     if "comments" in result:
-        result["comments"] = [_serialize_comment(c) for c in result["comments"]]
+        sorted_comments = sorted(
+            result["comments"],
+            key=lambda c: c.get("created_at") or datetime.min,
+            reverse=True,
+        )
+        result["comments"] = [_serialize_comment(c) for c in sorted_comments]
 
     return result
