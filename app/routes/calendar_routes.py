@@ -130,6 +130,13 @@ def status_view():
     # 4.5) 안전 sorting 추가
     all_issues.sort(key=_safe_due_date)
 
+    # 4.7) status별 그룹핑 추가
+    issues_by_status = {
+        "TODO": [i for i in all_issues if i.get("status") == "TODO"],
+        "IN_PROGRESS": [i for i in all_issues if i.get("status") == "IN_PROGRESS"],
+        "DONE": [i for i in all_issues if i.get("status") == "DONE"],
+    }
+
     # 5) 공통 템플릿 변수
     me = find_by_id(db, user_id)
     username = me.get("username", "User") if me else "User"
@@ -138,5 +145,6 @@ def status_view():
         "status.html",
         projects=projects,
         issues=all_issues,
+        issues_by_status=issues_by_status,
         username=username,
     )
