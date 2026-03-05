@@ -34,6 +34,7 @@ def serialize_issue(issue):
     result["due_date"] = _convert_value(result.get("due_date"))
     result["updated_by"] = _convert_value(result.get("updated_by"))
     result["updated_at"] = _convert_value(result.get("updated_at"))
+    result["creator_name"] = result.get("creator_name", "Unknown")
 
     if "comments" in result:
         sorted_comments = sorted(
