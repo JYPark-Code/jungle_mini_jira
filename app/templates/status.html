@@ -56,7 +56,7 @@
               </td>
               <td>{{ issue.creator_name }}</td>
               <td><span class="badge bg-secondary">{{ issue.status }}</span></td>
-              <td>{{ issue.due_date.strftime('%Y-%m-%d') if issue.due_date else '-' }}</td>
+              <td>{{ issue.due_date.strftime('%Y-%m-%d %H:%M:%S') if issue.due_date else '-' }}</td>
               <td>{{ issue.remaining_text }}</td>
             </tr>
             {% endfor %}
