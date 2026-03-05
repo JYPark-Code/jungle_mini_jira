@@ -53,11 +53,10 @@ const calendar = (y, m, d, projectId) => {
         let days = $("[data-date='" + ymd + "']");
         for (let i = 0; i < issues.length; i++) {
           let issue = issues[i];
-          let status = issue.status;
-          let _id = issue._id;
+          let title = issue.title;
           let btn = $("<button>");
           btn.addClass("Status");
-          btn.text(status);
+          btn.text(title);
 
           btn.on("click", () => {
             showIssueDetailModal(issue);

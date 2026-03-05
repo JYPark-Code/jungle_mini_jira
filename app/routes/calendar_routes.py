@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, session, redirect, url_for, current_app, request
 from app.repositories import project_repository as project_repo
 from app.repositories import issue_repository as issue_repo
-from app.repositories import invite_repository as invite_repo
 from app.repositories.user_repository import find_by_id
 from datetime import datetime
 
@@ -37,12 +36,9 @@ def calendar_view():
     # 3) 이슈 로드 (프로젝트 기준)
     issues = issue_repo.find_by_project(db, selected_project_id)
 
-    # 4) 내 초대함 (메일 발송 없이 in-app)
+    # 4) 유저 정보
     me = find_by_id(db, user_id)
     username = me.get("username", "User") if me else "User"
-    invites = []
-    if me and me.get("email"):
-        invites = invite_repo.list_pending_by_email(db, me["email"])
 
     # 5) Calendar week
     weeks = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -52,8 +48,6 @@ def calendar_view():
         projects=projects,
         selected_project_id=selected_project_id,
         issues=issues,
-        pending_invites_count=len(invites),
-        invites=invites,  # 필요하면 템플릿에서 목록도 출력 가능
         username=username,
         weeks=weeks,
     )
@@ -125,15 +119,10 @@ def status_view():
     # 5) 공통 템플릿 변수
     me = find_by_id(db, user_id)
     username = me.get("username", "User") if me else "User"
-    invites = []
-    if me and me.get("email"):
-        invites = invite_repo.list_pending_by_email(db, me["email"])
 
     return render_template(
         "status.html",
         projects=projects,
         issues=all_issues,
         username=username,
-        pending_invites_count=len(invites),
-        invites=invites,
     )

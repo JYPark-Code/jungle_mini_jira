@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+{% include "nav/nav.html" %}
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Status</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="mb-0">Issue Status</h2>
+    </div>
+
+    <!-- 프로젝트 선택(옵션) -->
+    <div class="mb-3">
+      <label class="form-label fw-bold">프로젝트</label>
+      <select class="form-select" disabled>
+        {% for p in projects %}
+        <option value="{{ p._id }}">{{ p.name or p.title or p._id }}</option>
+        {% endfor %}
+      </select>
+      <div cla s="form-text">
+        모든 프로젝트 이슈를 한 번에 보여줍니다.
+      </div>
+    </div>
+
+    {% if issues %}
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <strong>이슈 리스트</strong>
+      </div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>프로젝트</th>
+              <th>제목</th>
+              <th>만든 사람</th>
+              <th>상태</th>
+              <th>마감일</th>
+              <th>남은 시간</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for issue in issues %}
+            <tr>
+              <td>{{ issue.project_name }}</td>
+              <td>
+                <strong>{{ issue.title }}</strong><br>
+                <small class="text-muted">{{ issue.description }}</small>
+              </td>
+              <td>{{ issue.creator_name }}</td>
+              <td><span class="badge bg-secondary">{{ issue.status }}</span></td>
+              <td>{{ issue.due_date.strftime('%Y-%m-%d') if issue.due_date else '-' }}</td>
+              <td>{{ issue.remaining_text }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      아직 등록된 이슈가 없거나, 조회할 수 있는 프로젝트가 없습니다.
+    </div>
+    {% endif %}
+  </div>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

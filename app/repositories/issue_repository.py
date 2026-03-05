@@ -19,12 +19,23 @@ def find_by_project(db, project_id, sort_order=1):
 
 
 def find_by_range(db, project_id, start_date, end_date, sort_order=1):
+    query = {
+        "project_id": ObjectId(project_id),
+        "due_date": {"$gte": start_date},
+        "$or": [
+            {"start_date": {"$lte": end_date}},
+            {
+                "start_date": None,
+                "due_date": {"$lte": end_date},
+            },
+            {
+                "start_date": {"$exists": False},
+                "due_date": {"$lte": end_date},
+            },
+        ],
+    }
     return list(
-        db.issues.find({
-            "project_id": ObjectId(project_id),
-            "start_date": {"$lte": end_date},
-            "due_date": {"$gte": start_date},
-        }).sort("due_date", sort_order)
+        db.issues.find(query).sort("due_date", sort_order)
     )
 
 

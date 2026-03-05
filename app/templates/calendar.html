@@ -123,43 +123,6 @@
         dateMin();
       });
 
-      const save = () => {
-        let title = $("#title").val();
-        let description = $("#description").val();
-        let due_date = $("#dueDate").val();
-
-        let urlStr = window.location.href;
-        let url = new URL(urlStr);
-        let urlParams = url.searchParams;
-        let projectId = urlParams.get("project_id");
-        projectId = "{{ selected_project_id }}";
-
-        const tempData = {
-          title: title,
-          description: description,
-          due_date: due_date,
-        };
-
-        $.ajax({
-          url: "/api/projects/" + projectId + "/issues",
-          type: "POST",
-          contentType: "application/json",
-          data: JSON.stringify(tempData),
-
-          success: function (res) {
-            $("#alert").addClass("alert-success").text(res.message);
-            new bootstrap.Modal($("#modal1")).show();
-
-            window.location.href = window.location.href;
-          },
-
-          error: function (err) {
-            $("#alert").addClass("alert-danger").text(err.responseJSON.message);
-            new bootstrap.Modal($("#modal1")).show();
-          },
-        });
-      };
-
       const edit = () => {
         window.location.href = `/api/issues/${issue_id}/edit`;
       };
